@@ -1,0 +1,11 @@
+{
+    "CMD": 10000,
+    "DISTANCE": 10002,
+    "GRAPH_DATA": 10009,
+    "HR": 10007,
+    "KEY_TOUCH_ENABLE": 10011,
+    "MEDIA_CMD": 10008,
+    "PACE": 10003,
+    "STATE": 10004,
+    "TIME": 10001
+}

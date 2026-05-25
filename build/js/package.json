@@ -1,0 +1,176 @@
+{
+    "author": "1987haaa",
+    "dependencies": {},
+    "keywords": [],
+    "name": "iron",
+    "pebble": {
+        "capabilities": [
+            "health"
+        ],
+        "companionApp": {
+            "android": {
+                "url": "",
+                "apps": [
+                    {
+                        "package": "hag1987haaa.pebble.iron"
+                    }
+                ]
+            }
+        },
+        "displayName": "Iron",
+        "enableMultiJS": true,
+"messageKeys": {
+  "CMD": 10000,
+  "TIME": 10001,
+  "DISTANCE": 10002,
+  "PACE": 10003,
+  "STATE": 10004,
+  "HR": 10007,
+  "MEDIA_CMD": 10008,
+  "GRAPH_DATA": 10009,
+  "KEY_TOUCH_ENABLE":10011,
+  "ACTIVITY_TYPE": 10012
+},
+        "projectType": "native",
+"resources": {
+            "media": [
+                {
+                    "file": "images/Check_Black_2525.png",
+                    "name": "IMAGE_CHECK_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Check_White_2525.png",
+                    "name": "IMAGE_CHECK_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Down_Black_2525.png",
+                    "name": "IMAGE_DOWN_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Down_White_2525.png",
+                    "name": "IMAGE_DOWN_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Graph_Black_2525.png",
+                    "name": "IMAGE_GRAPH_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Graph_White_2525.png",
+                    "name": "IMAGE_GRAPH_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Pause_Black_2525.png",
+                    "name": "IMAGE_PAUSE_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Pause_White_2525.png",
+                    "name": "IMAGE_PAUSE_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Play_Black_2525.png",
+                    "name": "IMAGE_PLAY_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Play_White_2525.png",
+                    "name": "IMAGE_PLAY_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Save_Black_2525.png",
+                    "name": "IMAGE_SAVE_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Save_White_2525.png",
+                    "name": "IMAGE_SAVE_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Setting_Black_2525.png",
+                    "name": "IMAGE_SETTING_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Setting_White_2525.png",
+                    "name": "IMAGE_SETTING_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Stop_Black_2525.png",
+                    "name": "IMAGE_STOP_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Stop_White_2525.png",
+                    "name": "IMAGE_STOP_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Trash_Black_2525.png",
+                    "name": "IMAGE_TRASH_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Trash_White_2525.png",
+                    "name": "IMAGE_TRASH_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Up_Black_2525.png",
+                    "name": "IMAGE_UP_BLACK",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
+                    "file": "images/Up_White_2525.png",
+                    "name": "IMAGE_UP_WHITE",
+                    "targetPlatforms": null,
+                    "type": "png"
+                }
+            ]
+        
+    },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk",
+            "diorite",
+            "emery",
+            "gabbro",
+            "flint"
+        ],
+        "uuid": "0ec71971-1191-4e05-87f5-27a3c749023c",
+        "watchapp": {
+            "watchface": false
+        }
+    },
+    "version": "1.0.0"
+}
