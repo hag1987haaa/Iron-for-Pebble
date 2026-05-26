@@ -29,7 +29,7 @@ The companion app runs a stable background service during your workout and secur
 ## 🤝 Support the Developer
 
 Iron is completely free and open-source. There are no paywalls or locked features.
-If you find this app useful for your daily runs or love the automation integration, you can support the project using the "Support the Developer" in-app purchase within the Android companion app! Your support keeps this project alive.
+If you find this app useful for your daily runs or love the automation integration, sharing the app with others or leaving feedback is highly appreciated!
 
 ## 📝 License
 
@@ -68,7 +68,7 @@ Ironの真の力を引き出すには、Android用のコンパニオンアプリ
 ## 🤝 開発者をサポートする
 
 Ironは完全に無料でオープンソースです。有料の壁やロックされた機能はありません。
-毎日のランニングに役立ったり、自動化アプリとの連携機能を気に入っていただけた場合は、Androidコンパニオンアプリ内の「開発者を支援する（応援課金）」機能からプロジェクトをサポートしていただけると幸いです！皆様の支援がこのプロジェクトを継続する力になります。
+毎日のランニングに役立ったり、自動化アプリとの連携機能を気に入っていただけた場合は、周りの方にシェアしていただいたり、フィードバックをお寄せいただけると幸いです！皆様の応援がこのプロジェクトを継続する力になります。
 
 ## 📝 ライセンス
 
