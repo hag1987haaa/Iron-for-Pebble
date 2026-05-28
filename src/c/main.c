@@ -1171,7 +1171,7 @@ static void mid_bg_update_proc(Layer *layer, GContext *ctx) {
     r1y = upper_h + 17;
     r2y = upper_h + 45;
     lx = mx + 6;
-    rx = ((wt - ACTION_BAR_WIDTH) / 2) + 6;
+    rx = ((wt - ACTION_BAR_WIDTH) / 2) + 10;
 #elif defined(PBL_PLATFORM_CHALK)
     mid_h = 45;
     upper_h = (h - mid_h) / 2;
@@ -1180,7 +1180,7 @@ static void mid_bg_update_proc(Layer *layer, GContext *ctx) {
     r1y = base_y;
     r2y = base_y + 18;
     lx = mx - 4;
-    rx = ((wt - ACTION_BAR_WIDTH) / 2) + 12;
+    rx = ((wt - ACTION_BAR_WIDTH) / 2) + 16;
 #elif defined(PBL_PLATFORM_EMERY)
     mx = 10;
     upper_h = h / 3;
@@ -1188,7 +1188,7 @@ static void mid_bg_update_proc(Layer *layer, GContext *ctx) {
     r1y = upper_h + 22;
     r2y = upper_h + 50;
     lx = mx + 6;
-    rx = ((wt - ACTION_BAR_WIDTH) / 2) + 6;
+    rx = ((wt - ACTION_BAR_WIDTH) / 2) + 16;
 #else // PR2 / GABBRO
     mid_h = 65;
     upper_h = (h - mid_h) / 2;
@@ -1197,7 +1197,7 @@ static void mid_bg_update_proc(Layer *layer, GContext *ctx) {
     r1y = base_y;
     r2y = base_y + 28;
     lx = mx + 10;
-    rx = ((wt - ACTION_BAR_WIDTH) / 2) + 15;
+    rx = ((wt - ACTION_BAR_WIDTH) / 2) + 22;
 #endif
 
     int line_end_w = wt - ACTION_BAR_WIDTH - mx;
@@ -1609,7 +1609,7 @@ static void main_window_load(Window *window) {
     int vh5 = 0, vc1 = 0, vm5 = 0, vc2 = 0, vs5 = 0;
     int upper_h = 0, mid_h = 0, lower_h = 0;
     int row1_y = 0, row2_y = 0;
-    int tw = 0, lx = 0, rx = 0, row_h = 0;
+    int lx = 0, rx = 0, row_h = 0;
 
 #if defined(PBL_PLATFORM_APLITE)
     s_font_huge_time = fonts_get_system_font(FONT_KEY_LECO_32_BOLD_NUMBERS);
@@ -1635,8 +1635,7 @@ static void main_window_load(Window *window) {
     
     mid_h = h3; upper_h = h3; lower_h = h - mid_h - upper_h;
     row_h = 28;
-    lx = 18; rx = (active_w / 2) + 16;
-    tw = 46;
+    lx = 18; rx = (active_w / 2) + 20;
     row1_y = upper_h + 5; row2_y = upper_h + 33;
 
 #elif defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
@@ -1663,8 +1662,7 @@ static void main_window_load(Window *window) {
     
     mid_h = h3; upper_h = h3; lower_h = h - mid_h - upper_h;
     row_h = 28;
-    lx = 18; rx = (active_w / 2) + 16;
-    tw = 46; 
+    lx = 18; rx = (active_w / 2) + 20;
     row1_y = upper_h + 5; row2_y = upper_h + 33;
 
 #elif defined(PBL_PLATFORM_CHALK)
@@ -1699,8 +1697,7 @@ static void main_window_load(Window *window) {
     row_h = 18;
     int mx = 20;
     lx = mx - 4 + 8; 
-    rx = (active_w / 2) + 12 + 8;
-    tw = rx - lx - 14;
+    rx = (active_w / 2) + 16 + 8;
     row1_y = upper_h + (mid_h - row_h * 2) / 2 + 2;
     row2_y = row1_y + row_h;
 
@@ -1730,8 +1727,7 @@ static void main_window_load(Window *window) {
     
     mid_h = h3; upper_h = h3; lower_h = h - mid_h - upper_h;
     row_h = 28;
-    lx = 32; rx = (active_w / 2) + 16;
-    tw = 46;
+    lx = 32; rx = (active_w / 2) + 26;
     row1_y = upper_h + 5; row2_y = upper_h + 33;
 
 #elif defined(PBL_PLATFORM_GABBRO)
@@ -1765,8 +1761,7 @@ static void main_window_load(Window *window) {
     row_h = 28;
     int mx = 30;
     lx = mx + 10 + 8;
-    rx = (active_w / 2) + 15 + 8;
-    tw = 70;
+    rx = (active_w / 2) + 22 + 8;
     row1_y = upper_h + (mid_h - row_h * 2) / 2 - 2;
     row2_y = row1_y + row_h;
 #else
@@ -1792,8 +1787,7 @@ static void main_window_load(Window *window) {
     
     mid_h = h3; upper_h = h3; lower_h = h - mid_h - upper_h;
     row_h = 28;
-    lx = 26; rx = (active_w / 2) + 16;
-    tw = 60;
+    lx = 26; rx = (active_w / 2) + 20;
     row1_y = upper_h + 5; row2_y = upper_h + 33;
 #endif
 
@@ -1841,10 +1835,13 @@ static void main_window_load(Window *window) {
         s_rect_sec_5 = GRect(sx5 + h5w + c1w + m5w + c2w, y5_base_s, s5w, r_h5);
     }
 
-    s_dist_layer = text_layer_create(GRect(lx, row1_y, tw, row_h));
-    s_step_layer = text_layer_create(GRect(rx, row1_y, tw, row_h));
-    s_hr_layer = text_layer_create(GRect(lx, row2_y, tw, row_h));
-    s_clock_layer = text_layer_create(GRect(rx, row2_y, tw, row_h));
+    int tw_left = rx - lx - 2;
+    int tw_right = active_w - rx;
+
+    s_dist_layer = text_layer_create(GRect(lx, row1_y, tw_left, row_h));
+    s_step_layer = text_layer_create(GRect(rx, row1_y, tw_right, row_h));
+    s_hr_layer = text_layer_create(GRect(lx, row2_y, tw_left, row_h));
+    s_clock_layer = text_layer_create(GRect(rx, row2_y, tw_right, row_h));
     
     // 共通レイヤー設定
     s_time_hour_layer = text_layer_create(s_rect_hour_5);
