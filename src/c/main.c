@@ -98,6 +98,7 @@ static bool s_is_round_screen = false;
 static bool s_is_long_workout = false;
 static bool s_has_hr_sensor = false; 
 static bool s_is_touch_enabled = true; 
+static bool s_is_custom_marquee = false;
 
 static int s_start_steps = 0, s_pause_start_steps = 0, s_current_hr = 0;
 
@@ -792,6 +793,7 @@ static void destroy_marquee_layers() {
         layer_destroy(s_msg_container_layer);
         s_msg_container_layer = NULL;
     }
+    s_is_custom_marquee = false;
 }
 
 static void create_marquee_layers() {
@@ -814,11 +816,8 @@ static void create_marquee_layers() {
 
     layer_set_update_proc(s_msg_container_layer, msg_container_update_proc);
     
-    if (s_action_bar) {
-        layer_insert_below_sibling(s_msg_container_layer, action_bar_layer_get_layer(s_action_bar));
-    } else {
-        layer_add_child(wl, s_msg_container_layer);
-    }
+    // 最前面に表示するため、常に最後に追加する
+    layer_add_child(wl, s_msg_container_layer);
     
     s_msg_layer = text_layer_create(GRect(w, -2, 450, 24));
     text_layer_set_font(s_msg_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
@@ -845,6 +844,7 @@ static void anim_stopped_handler(Animation *animation, bool finished, void *cont
 
 static void custom_msg_timer_callback(void *context) {
     s_marquee_timer = NULL;
+    s_is_custom_marquee = false;
     if (s_app_state == 5 || s_app_state == 6) {
         destroy_marquee_layers();
         s_marquee_timer = app_timer_register(5000, marquee_timer_callback, NULL);
@@ -856,6 +856,7 @@ static void custom_msg_timer_callback(void *context) {
 }
 
 static void trigger_custom_marquee(const char *msg) {
+    s_is_custom_marquee = true;
     create_marquee_layers();
     stop_marquee();
     
@@ -879,6 +880,8 @@ static void trigger_custom_marquee(const char *msg) {
 }
 
 static void trigger_marquee() {
+    if (s_is_custom_marquee) return;
+
     if (s_app_state == 3 || s_app_state == 4) {
         destroy_marquee_layers();
         return;
@@ -1280,9 +1283,13 @@ static void update_ui_state() {
     if (s_clock_layer) layer_set_hidden(text_layer_get_layer(s_clock_layer), hide);
 
     if ((s_app_state < 3 || s_app_state >= 5) && !hide) {
-        trigger_marquee();
+        if (!s_is_custom_marquee) {
+            trigger_marquee();
+        }
     } else {
-        destroy_marquee_layers();
+        if (!s_is_custom_marquee) {
+            destroy_marquee_layers();
+        }
     }
 
     if (s_is_long_workout) {
@@ -1916,10 +1923,6 @@ static void main_window_load(Window *window) {
 
 static void main_window_unload(Window *window) {
     destroy_marquee_layers();
-    if (s_marquee_timer) {
-        app_timer_cancel(s_marquee_timer);
-        s_marquee_timer = NULL;
-    }
     
     if (s_ignore_single_click_timer) {
         app_timer_cancel(s_ignore_single_click_timer);
