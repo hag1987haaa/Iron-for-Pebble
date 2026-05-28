@@ -1505,9 +1505,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+    static char last_clock_buf[16] = "";
     clock_copy_time_string(s_clock_buf, 16);
-    if (s_clock_layer) {
-        text_layer_set_text(s_clock_layer, s_clock_buf);
+    if (strcmp(s_clock_buf, last_clock_buf) != 0) {
+        strcpy(last_clock_buf, s_clock_buf);
+        if (s_clock_layer) {
+            text_layer_set_text(s_clock_layer, s_clock_buf);
+        }
     }
     
 #if defined(PBL_HEALTH)
@@ -1535,14 +1539,20 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     }
 
 #if defined(PBL_HEALTH)
+    static int last_hr = -1;
     if (s_has_hr_sensor) {
         s_current_hr = (int)health_service_peek_current_value(HealthMetricHeartRateBPM);
-        if (s_current_hr < 30) snprintf(s_hr_buf, 16, "--");
-        else snprintf(s_hr_buf, 16, "%d", s_current_hr);
-        if (s_hr_layer) text_layer_set_text(s_hr_layer, s_hr_buf);
+        if (s_current_hr != last_hr) {
+            last_hr = s_current_hr;
+            if (s_current_hr < 30) snprintf(s_hr_buf, 16, "--");
+            else snprintf(s_hr_buf, 16, "%d", s_current_hr);
+            if (s_hr_layer) text_layer_set_text(s_hr_layer, s_hr_buf);
+        }
     } else {
-        snprintf(s_hr_buf, 16, "--");
-        // Hide is handled in update_ui_state natively
+        if (last_hr != -2) {
+            snprintf(s_hr_buf, 16, "--");
+            last_hr = -2;
+        }
     }
 #else
     snprintf(s_hr_buf, 16, "--");
@@ -1565,13 +1575,21 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         }
     }
     
+    static int last_ds = -1;
 #if defined(PBL_HEALTH)
-    if (ds >= 10000) snprintf(s_step_buf, 16, "%d.%dK", ds / 1000, (ds % 1000) / 100);
-    else snprintf(s_step_buf, 16, "%d", ds);
+    if (ds != last_ds) {
+        last_ds = ds;
+        if (ds >= 10000) snprintf(s_step_buf, 16, "%d.%dK", ds / 1000, (ds % 1000) / 100);
+        else snprintf(s_step_buf, 16, "%d", ds);
+        if (s_step_layer) text_layer_set_text(s_step_layer, s_step_buf);
+    }
 #else
-    snprintf(s_step_buf, 16, "--");
+    if (last_ds != -2) {
+        snprintf(s_step_buf, 16, "--");
+        last_ds = -2;
+        if (s_step_layer) text_layer_set_text(s_step_layer, s_step_buf);
+    }
 #endif
-    if (s_step_layer) text_layer_set_text(s_step_layer, s_step_buf);
 }
 
 /* ==========================================================
