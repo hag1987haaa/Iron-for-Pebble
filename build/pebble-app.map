@@ -123,6 +123,8 @@ Discarded input sections
                 0x00000000        0x4 aplite/src/resource_ids.auto.c.57.o
  .data.RESOURCE_ID_IMAGE_CHECK_BLACK
                 0x00000000        0x4 aplite/src/resource_ids.auto.c.57.o
+ .data.RESOURCE_ID_IMAGE_APP_ICON
+                0x00000000        0x4 aplite/src/resource_ids.auto.c.57.o
  .text          0x00000000        0x0 src/message_keys.auto.c.57.o
  .bss           0x00000000        0x0 src/message_keys.auto.c.57.o
  .data.MESSAGE_KEY_TIME
@@ -140,6 +142,8 @@ Discarded input sections
  .data.MESSAGE_KEY_DISTANCE
                 0x00000000        0x4 src/message_keys.auto.c.57.o
  .data.MESSAGE_KEY_CMD
+                0x00000000        0x4 src/message_keys.auto.c.57.o
+ .data.MESSAGE_KEY_ACTIVITY_TYPE
                 0x00000000        0x4 src/message_keys.auto.c.57.o
  .bss           0x00000000        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/current/sdk-core/pebble/aplite/lib/libpebble.a(tmp7jpKUopebble.o)
  .text.accel_data_service_subscribe__deprecated
@@ -2076,11 +2080,11 @@ LOAD /home/naokiiwaoka/.pebble-sdk/SDKs/4.9.169/toolchain/arm-none-eabi/bin/../l
  .comment       0x00000039       0x3a /home/naokiiwaoka/.pebble-sdk/SDKs/4.9.169/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-errno.o)
  .comment       0x00000039       0x3a /home/naokiiwaoka/.pebble-sdk/SDKs/4.9.169/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtend.o
 
-.debug_info     0x00000000     0x53b5
+.debug_info     0x00000000     0x53d5
  .debug_info    0x00000000     0x4dad src/c/main.c.57.o
  .debug_info    0x00004dad      0x33e aplite/appinfo.auto.c.57.o
- .debug_info    0x000050eb      0x1bd aplite/src/resource_ids.auto.c.57.o
- .debug_info    0x000052a8      0x10d src/message_keys.auto.c.57.o
+ .debug_info    0x000050eb      0x1cd aplite/src/resource_ids.auto.c.57.o
+ .debug_info    0x000052b8      0x11d src/message_keys.auto.c.57.o
 
 .debug_abbrev   0x00000000      0x6dd
  .debug_abbrev  0x00000000      0x590 src/c/main.c.57.o
@@ -2114,12 +2118,12 @@ LOAD /home/naokiiwaoka/.pebble-sdk/SDKs/4.9.169/toolchain/arm-none-eabi/bin/../l
  .debug_line    0x00002bd0      0x11e aplite/src/resource_ids.auto.c.57.o
  .debug_line    0x00002cee      0x117 src/message_keys.auto.c.57.o
 
-.debug_str      0x00000000     0x2146
- .debug_str     0x00000000     0x2146 src/c/main.c.57.o
+.debug_str      0x00000000     0x217b
+ .debug_str     0x00000000     0x217b src/c/main.c.57.o
                                0x1bf7 (size before relaxing)
- .debug_str     0x00002146      0x4bf aplite/appinfo.auto.c.57.o
- .debug_str     0x00002146      0x3b5 aplite/src/resource_ids.auto.c.57.o
- .debug_str     0x00002146      0x212 src/message_keys.auto.c.57.o
+ .debug_str     0x0000217b      0x4bf aplite/appinfo.auto.c.57.o
+ .debug_str     0x0000217b      0x3d0 aplite/src/resource_ids.auto.c.57.o
+ .debug_str     0x0000217b      0x22c src/message_keys.auto.c.57.o
 
 .debug_frame    0x00000000      0x480
  .debug_frame   0x00000000      0x480 src/c/main.c.57.o

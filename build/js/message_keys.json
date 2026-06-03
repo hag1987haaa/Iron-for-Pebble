@@ -1,4 +1,5 @@
 {
+    "ACTIVITY_TYPE": 10012,
     "CMD": 10000,
     "DISTANCE": 10002,
     "GRAPH_DATA": 10009,

@@ -30,6 +30,13 @@
     "resources": {
         "media": [
             {
+                "file": "images/Iron_Pebble_App_icon_2525.png",
+                "name": "IMAGE_APP_ICON",
+                "targetPlatforms": null,
+                "type": "png",
+                "menuIcon": true
+            },
+            {
                 "file": "images/Check_Black_2525.png",
                 "name": "IMAGE_CHECK_BLACK",
                 "targetPlatforms": null,
