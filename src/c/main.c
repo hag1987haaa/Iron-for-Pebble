@@ -829,7 +829,6 @@ static void anim_stopped_handler(Animation *animation, bool finished, void *cont
     if (s_marquee_anim && property_animation_get_animation(s_marquee_anim) == animation) {
         s_marquee_anim = NULL;
     }
-    animation_destroy(animation);
     
     if (finished && (s_app_state == 5 || s_app_state == 6)) {
         destroy_marquee_layers();
@@ -952,20 +951,23 @@ static void graph_update_proc(Layer *layer, GContext *ctx) {
     char ly[16], lx[16];
     
     if (s_graph_id == 0) {
-        snprintf(ly, 16, "PACE");
+        snprintf(ly, 16, "SPEED");
         if (s_graph_scale == 200 || s_graph_scale == 500) snprintf(lx, 16, "X:%dm", s_graph_scale);
         else snprintf(lx, 16, "X:%dkm", s_graph_scale);
     } else if (s_graph_id == 1) {
         snprintf(ly, 16, "DIST");
         snprintf(lx, 16, "X:%dmin", s_graph_scale);
     } else if (s_graph_id == 2) {
-        snprintf(ly, 16, "PITCH");
+        snprintf(ly, 16, "STEPS");
         snprintf(lx, 16, "X:%dmin", s_graph_scale);
     } else if (s_graph_id == 3) {
         snprintf(ly, 16, "ALT");
         snprintf(lx, 16, "X:%dmin", s_graph_scale);
     } else if (s_graph_id == 4) {
-        snprintf(ly, 16, "HEART");
+        snprintf(ly, 16, "HR");
+        snprintf(lx, 16, "X:%dmin", s_graph_scale);
+    } else if (s_graph_id == 5) {
+        snprintf(ly, 16, "CALORIES");
         snprintf(lx, 16, "X:%dmin", s_graph_scale);
     }
     
@@ -1154,6 +1156,25 @@ static void graph_update_proc(Layer *layer, GContext *ctx) {
         int lbl_h = 16;
         graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
         graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+    } else if (s_graph_id == 5) {
+        // Calories: 棒グラフ表現と最大値(kcal)の表示
+        int p_max = 1;
+        for (int i = 0; i < s_graph_count; i++) {
+            if (s_graph_data[i] > p_max) p_max = s_graph_data[i];
+        }
+        for (int i = 0; i < s_graph_count; i++) {
+            int bh = (s_graph_data[i] * mah) / p_max;
+            if (bh < 0) bh = 0;
+            int bar_w = bw - 1;
+            if (bar_w < 1) bar_w = 1; 
+            graphics_fill_rect(ctx, GRect(pl + i * bw, b.size.h - bh, bar_w, bh), 0, GCornerNone);
+        }
+        char max_str[16];
+        snprintf(max_str, 16, "%dkcal", p_max);
+        int lbl_w = 48;
+        int lbl_x = b.size.w - lbl_w;
+        int lbl_h = 16;
+        graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
     }
 }
 
@@ -1399,7 +1420,15 @@ static void update_ui_state() {
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
     Tuple *t = dict_read_first(iterator);
     while (t) {
-        if (t->key == MESSAGE_KEY_STATE) {
+        if (t->key == MESSAGE_KEY_CMD) {
+            int cmd = get_int(t);
+            if (cmd == 10) {
+                vibes_long_pulse();
+            } else if (cmd == 11) {
+                vibes_double_pulse();
+            }
+        }
+        else if (t->key == MESSAGE_KEY_STATE) {
             uint8_t ps = (uint8_t)get_int(t);
             if (ps != s_app_state) {
 #if defined(PBL_HEALTH)
