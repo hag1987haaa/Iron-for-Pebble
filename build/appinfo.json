@@ -24,7 +24,8 @@
         "MEDIA_CMD": 10008,
         "GRAPH_DATA": 10009,
         "KEY_TOUCH_ENABLE": 10011,
-        "ACTIVITY_TYPE": 10012
+        "ACTIVITY_TYPE": 10012,
+        "MID_DATA": 10013
     },
     "projectType": "native",
     "resources": {
@@ -187,6 +188,7 @@
         "MEDIA_CMD": 10008,
         "GRAPH_DATA": 10009,
         "KEY_TOUCH_ENABLE": 10011,
-        "ACTIVITY_TYPE": 10012
+        "ACTIVITY_TYPE": 10012,
+        "MID_DATA": 10013
     }
 }

@@ -13,6 +13,7 @@ extern uint32_t MESSAGE_KEY_GRAPH_DATA;
 extern uint32_t MESSAGE_KEY_HR;
 extern uint32_t MESSAGE_KEY_KEY_TOUCH_ENABLE;
 extern uint32_t MESSAGE_KEY_MEDIA_CMD;
+extern uint32_t MESSAGE_KEY_MID_DATA;
 extern uint32_t MESSAGE_KEY_PACE;
 extern uint32_t MESSAGE_KEY_STATE;
 extern uint32_t MESSAGE_KEY_TIME;

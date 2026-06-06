@@ -13,7 +13,7 @@
 #define MESSAGE_KEY_STATE 10004
 #define MESSAGE_KEY_MEDIA_CMD 10008  
 #define MESSAGE_KEY_GRAPH_DATA 10009
-#define MESSAGE_KEY_TOUCH_ENABLE 10011 
+#define MESSAGE_KEY_MID_DATA 10013
 #define MESSAGE_KEY_ACTIVITY_TYPE 10012
 
 #define PK_START_STEPS 51
@@ -22,7 +22,6 @@
 #define PK_GRAPH_ID 55
 #define PK_GRAPH_SCALE 56
 #define PK_PERSONAL_COLOR 57 
-#define PK_TOUCH_ENABLE 58 
 #define PK_ACTIVITY_TYPE 59
 
 typedef enum {
@@ -46,9 +45,18 @@ static const char* ACTIVITY_NAMES[] = {
 static Layer *s_activity_picker_layer = NULL;
 static bool s_is_activity_picking = false;
 static int s_preview_activity_idx = 0;
+
+#define MAX_MID_PAGES 15
+typedef struct {
+    char name[16];
+    char value[16];
+    char unit[16];
+    int icon_id;
+} MidPageData;
+
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
 #define SWIPE_MIN_DIST_PX 30      
-#define SWIPE_MAX_TIME_MS 400
+#define SWIPE_MAX_TIME_MS 800
 #define DOUBLE_TAP_MAX_DELAY_MS 500
 #define TAP_MAX_DIST_PX 15
 #endif
@@ -97,7 +105,6 @@ static bool s_is_small_screen = false;
 static bool s_is_round_screen = false;
 static bool s_is_long_workout = false;
 static bool s_has_hr_sensor = false; 
-static bool s_is_touch_enabled = true; 
 static bool s_is_custom_marquee = false;
 
 static int s_start_steps = 0, s_pause_start_steps = 0, s_current_hr = 0;
@@ -105,6 +112,15 @@ static int s_start_steps = 0, s_pause_start_steps = 0, s_current_hr = 0;
 #define MAX_GRAPH_DATA 45 
 static int s_graph_data[MAX_GRAPH_DATA]; 
 static int s_graph_count = 0, s_graph_id = 0, s_graph_scale = 1; 
+
+static MidPageData s_mid_pages[MAX_MID_PAGES];
+static int s_mid_page_count = 0;
+static int s_current_mid_mode = 0; // 0 ~ s_mid_page_count-1
+
+static char s_graph_y_label[16] = "";
+static char s_graph_x_label[16] = "";
+static char s_graph_max_label[16] = "";
+static char s_graph_min_label[16] = "";
 
 static GRect s_rect_hour_5, s_rect_col1_5, s_rect_min_5, s_rect_col2_5, s_rect_sec_5, s_rect_min_3, s_rect_col2_3, s_rect_sec_3;
 
@@ -250,7 +266,6 @@ static void load_persist_data() {
         s_personal_color_argb = (GColor){.argb = s_selected_color_idx + 0b11000000}.argb;
     }
 #endif
-    if (persist_exists(PK_TOUCH_ENABLE)) s_is_touch_enabled = (persist_read_int(PK_TOUCH_ENABLE) == 1);
 }
 
 static void clear_graph_data() {
@@ -267,6 +282,17 @@ static void clear_graph_data() {
     if (s_graph_layer) layer_mark_dirty(s_graph_layer);
 }
 
+// 安全に文字列を区切り文字まで抽出するヘルパー関数
+static void extract_token(const char **ptr, char *out, int max_len) {
+    int i = 0;
+    while (**ptr && **ptr != ',' && **ptr != '|') {
+        if (i < max_len - 1) out[i++] = **ptr;
+        (*ptr)++;
+    }
+    out[i] = '\0';
+    if (**ptr == ',' || **ptr == '|') (*ptr)++;
+}
+
 static void parse_hybrid_graph_data(const char *input) {
     if (!input || input[0] == '\0') {
         s_graph_count = 0;
@@ -274,28 +300,49 @@ static void parse_hybrid_graph_data(const char *input) {
     }
     memset(s_graph_data, 0, sizeof(s_graph_data));
     const char *p = input;
-    s_graph_id = atoi(p);
-    while (*p && *p != ',') p++;
-    if (*p == ',') p++;
-    s_graph_scale = atoi(p);
-    while (*p && *p != ',') p++;
-    if (*p == ',') p++;
+    
+    char type_str[8];
+    extract_token(&p, type_str, sizeof(type_str));
+    s_graph_id = atoi(type_str); 
+    
+    extract_token(&p, s_graph_y_label, sizeof(s_graph_y_label));
+    extract_token(&p, s_graph_x_label, sizeof(s_graph_x_label));
+    extract_token(&p, s_graph_max_label, sizeof(s_graph_max_label));
+    extract_token(&p, s_graph_min_label, sizeof(s_graph_min_label));
     
     int idx = 0;
     while (*p && idx < MAX_GRAPH_DATA) {
-        if ((*p >= '0' && *p <= '9') || *p == '-') {
-            s_graph_data[idx++] = atoi(p);
-            while (*p && *p != ',') p++;
-            if (*p == ',') p++;
-        } else {
-            p++;
+        char val_str[16];
+        extract_token(&p, val_str, sizeof(val_str));
+        if (val_str[0] != '\0') {
+            s_graph_data[idx++] = atoi(val_str);
         }
     }
     s_graph_count = idx;
 }
 
+static void parse_mid_data(const char *input) {
+    s_mid_page_count = 0;
+    if (!input || input[0] == '\0') return;
+    const char *p = input;
+    while (*p && s_mid_page_count < MAX_MID_PAGES) {
+        MidPageData *page = &s_mid_pages[s_mid_page_count];
+        extract_token(&p, page->name, sizeof(page->name));
+        extract_token(&p, page->value, sizeof(page->value));
+        extract_token(&p, page->unit, sizeof(page->unit));
+        char icon_str[8];
+        extract_token(&p, icon_str, sizeof(icon_str));
+        page->icon_id = atoi(icon_str);
+        s_mid_page_count++;
+    }
+    if (s_mid_page_count == 0 || s_current_mid_mode >= s_mid_page_count) {
+        s_current_mid_mode = 0;
+    }
+}
+
 static AppTimer *s_ignore_single_click_timer = NULL;
 static bool s_ignore_single_click = false;
+static uint64_t s_long_click_start_time = 0;
 
 static void reset_ignore_single_click_callback(void *context) {
     s_ignore_single_click = false;
@@ -313,7 +360,6 @@ static void trigger_ignore_single_click() {
    ========================================================== */
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
 static void touch_event_handler(const TouchEvent *event, void *context) {
-    if (!s_is_touch_enabled) return;
     uint64_t current_time = get_current_time_ms();
     static int s_touch_start_x = 0;
     static int s_touch_start_y = 0;
@@ -400,11 +446,11 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         destroy_color_picker_layer();
         if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, false);
         if (s_graph_layer) layer_set_hidden(s_graph_layer, false);
-        update_ui_state();
         if (s_action_bar && s_main_window) {
             action_bar_layer_remove_from_window(s_action_bar);
             action_bar_layer_add_to_window(s_action_bar, s_main_window);
         }
+        update_ui_state();
         vibes_short_pulse();
         return;
     }
@@ -417,11 +463,11 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         destroy_activity_picker_layer();
         if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, false);
         if (s_graph_layer) layer_set_hidden(s_graph_layer, false);
-        update_ui_state();
         if (s_action_bar && s_main_window) {
             action_bar_layer_remove_from_window(s_action_bar);
             action_bar_layer_add_to_window(s_action_bar, s_main_window);
         }
+        update_ui_state();
         vibes_short_pulse();
         return;
     }
@@ -438,16 +484,26 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
             s_preview_is_running = false;
             create_color_picker_layer();
         }
-        update_ui_state();
         if (s_action_bar && s_main_window) {
             action_bar_layer_remove_from_window(s_action_bar);
             action_bar_layer_add_to_window(s_action_bar, s_main_window);
         }
+        update_ui_state();
         vibes_short_pulse();
         return;
     }
 #endif
     if (s_ignore_single_click) return;
+
+    if (s_app_state == 3) {
+        if (s_mid_page_count > 0) {
+            s_current_mid_mode++;
+            if (s_current_mid_mode >= s_mid_page_count) s_current_mid_mode = 0;
+            update_ui_state();
+            vibes_short_pulse();
+        }
+        return;
+    }
 
     if (s_app_state <= 2) {
 #if defined(PBL_COLOR)
@@ -463,11 +519,11 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 #endif
         if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, true);
         if (s_graph_layer) layer_set_hidden(s_graph_layer, true);
-        update_ui_state();
         if (s_action_bar && s_main_window) {
             action_bar_layer_remove_from_window(s_action_bar);
             action_bar_layer_add_to_window(s_action_bar, s_main_window);
         }
+        update_ui_state();
         vibes_short_pulse();
     } else if (s_app_state == 4) {
         send_cmd(2);
@@ -515,6 +571,7 @@ static void generic_long_click_down_handler(ClickRecognizerRef recognizer, void 
 #endif
     if (ignore) return;
     trigger_ignore_single_click();
+    s_long_click_start_time = get_current_time_ms();
     vibes_short_pulse();
 }
 
@@ -525,6 +582,10 @@ static void up_long_click_release_handler(ClickRecognizerRef recognizer, void *c
 #endif
     if (ignore) return;
     trigger_ignore_single_click();
+    
+    // 800ms + 1200ms = 2000ms (2秒) 以上押されていた場合はキャンセル
+    if (get_current_time_ms() - s_long_click_start_time >= 1200) return;
+
     send_cmd(50);
     trigger_custom_marquee("UP LONG SEND");
     vibes_short_pulse();
@@ -537,6 +598,10 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
 #endif
     if (ignore) return;
     trigger_ignore_single_click();
+    
+    // 2秒以上押されていた場合はキャンセル
+    if (get_current_time_ms() - s_long_click_start_time >= 1200) return;
+
     send_cmd(51);
     trigger_custom_marquee("SELECT LONG SEND");
     vibes_short_pulse();
@@ -549,6 +614,10 @@ static void down_long_click_release_handler(ClickRecognizerRef recognizer, void 
 #endif
     if (ignore) return;
     trigger_ignore_single_click();
+    
+    // 2秒以上押されていた場合はキャンセル
+    if (get_current_time_ms() - s_long_click_start_time >= 1200) return;
+
     send_cmd(52);
     trigger_custom_marquee("DOWN LONG SEND");
     vibes_short_pulse();
@@ -567,13 +636,13 @@ static void click_config_provider(void *context) {
     }
 
     window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
-    window_long_click_subscribe(BUTTON_ID_UP, 2000, generic_long_click_down_handler, up_long_click_release_handler);
+    window_long_click_subscribe(BUTTON_ID_UP, 800, generic_long_click_down_handler, up_long_click_release_handler);
 
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
-    window_long_click_subscribe(BUTTON_ID_SELECT, 2000, generic_long_click_down_handler, select_long_click_release_handler);
+    window_long_click_subscribe(BUTTON_ID_SELECT, 800, generic_long_click_down_handler, select_long_click_release_handler);
 
     window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
-    window_long_click_subscribe(BUTTON_ID_DOWN, 2000, generic_long_click_down_handler, down_long_click_release_handler);
+    window_long_click_subscribe(BUTTON_ID_DOWN, 800, generic_long_click_down_handler, down_long_click_release_handler);
 }
 
 /* ==========================================================
@@ -816,8 +885,11 @@ static void create_marquee_layers() {
 
     layer_set_update_proc(s_msg_container_layer, msg_container_update_proc);
     
-    // 最前面に表示するため、常に最後に追加する
-    layer_add_child(wl, s_msg_container_layer);
+    if (s_action_bar) {
+        layer_insert_below_sibling(s_msg_container_layer, action_bar_layer_get_layer(s_action_bar));
+    } else {
+        layer_add_child(wl, s_msg_container_layer);
+    }
     
     s_msg_layer = text_layer_create(GRect(w, -2, 450, 24));
     text_layer_set_font(s_msg_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
@@ -948,31 +1020,9 @@ static void graph_update_proc(Layer *layer, GContext *ctx) {
     int bw = dw / (s_graph_count > 0 ? s_graph_count : 1);
     if (bw < 2) bw = 2;
     
-    char ly[16], lx[16];
-    
-    if (s_graph_id == 0) {
-        snprintf(ly, 16, "SPEED");
-        if (s_graph_scale == 200 || s_graph_scale == 500) snprintf(lx, 16, "X:%dm", s_graph_scale);
-        else snprintf(lx, 16, "X:%dkm", s_graph_scale);
-    } else if (s_graph_id == 1) {
-        snprintf(ly, 16, "DIST");
-        snprintf(lx, 16, "X:%dmin", s_graph_scale);
-    } else if (s_graph_id == 2) {
-        snprintf(ly, 16, "STEPS");
-        snprintf(lx, 16, "X:%dmin", s_graph_scale);
-    } else if (s_graph_id == 3) {
-        snprintf(ly, 16, "ALT");
-        snprintf(lx, 16, "X:%dmin", s_graph_scale);
-    } else if (s_graph_id == 4) {
-        snprintf(ly, 16, "HR");
-        snprintf(lx, 16, "X:%dmin", s_graph_scale);
-    } else if (s_graph_id == 5) {
-        snprintf(ly, 16, "CALORIES");
-        snprintf(lx, 16, "X:%dmin", s_graph_scale);
-    }
-    
-    graphics_draw_text(ctx, ly, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(pl, 4, b.size.w, 16), 0, GTextAlignmentLeft, NULL);
-    graphics_draw_text(ctx, lx, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, 4, b.size.w - 4, 16), 0, GTextAlignmentRight, NULL);
+    // スマホから送られてきたラベルをそのまま描画
+    graphics_draw_text(ctx, s_graph_y_label, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(pl, 4, b.size.w, 16), 0, GTextAlignmentLeft, NULL);
+    graphics_draw_text(ctx, s_graph_x_label, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, 4, b.size.w - 4, 16), 0, GTextAlignmentRight, NULL);
     
     if (s_graph_count <= 0) return;
     
@@ -1169,24 +1219,36 @@ static void graph_update_proc(Layer *layer, GContext *ctx) {
             if (bar_w < 1) bar_w = 1; 
             graphics_fill_rect(ctx, GRect(pl + i * bw, b.size.h - bh, bar_w, bh), 0, GCornerNone);
         }
-        char max_str[16];
-        snprintf(max_str, 16, "%dkcal", p_max);
         int lbl_w = 48;
         int lbl_x = b.size.w - lbl_w;
         int lbl_h = 16;
-        graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+        graphics_draw_text(ctx, s_graph_max_label, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
     }
+}
+
+static bool is_detail_mode() {
+    if (s_app_state != 3) return true;
+    if (s_mid_page_count == 0) return true;
+    if (s_current_mid_mode < s_mid_page_count) {
+        MidPageData *page = &s_mid_pages[s_current_mid_mode];
+        if (page->name[0] == '\0' && strcmp(page->value, "DETAIL") == 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 static void mid_bg_update_proc(Layer *layer, GContext *ctx) {
     GRect b = layer_get_bounds(layer);
     graphics_context_set_stroke_color(ctx, s_current_main_fg);
     graphics_context_set_fill_color(ctx, s_current_main_fg);
+    graphics_context_set_text_color(ctx, s_current_main_fg);
 
     int wt = b.size.w;
     int h = b.size.h;
 
     int mx = 0, upper_h = 0, mid_h = 0, r1y = 0, r2y = 0, lx = 0, rx = 0;
+    int active_w = wt - ACTION_BAR_WIDTH;
 
 #if defined(PBL_PLATFORM_APLITE) || defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
     mx = (wt <= 144) ? 5 : 10;
@@ -1224,10 +1286,50 @@ static void mid_bg_update_proc(Layer *layer, GContext *ctx) {
     rx = ((wt - ACTION_BAR_WIDTH) / 2) + 22;
 #endif
 
-    int line_end_w = wt - ACTION_BAR_WIDTH - mx;
+    int fill_w = wt;
+    bool is_active = (s_app_state == 3);
+
+    if (is_active) {
+        // 中段エリアを塗りつぶし（背景色と文字色の反転）
+        graphics_context_set_fill_color(ctx, s_current_main_fg);
+        graphics_fill_rect(ctx, GRect(0, upper_h, fill_w, mid_h), 0, GCornerNone);
+        graphics_context_set_text_color(ctx, s_current_main_bg);
+        graphics_context_set_stroke_color(ctx, s_current_main_bg);
+    } else {
+        graphics_context_set_text_color(ctx, s_current_main_fg);
+        graphics_context_set_stroke_color(ctx, s_current_main_fg);
+    }
+
+    if (!is_detail_mode()) {
+
+        if (s_current_mid_mode < s_mid_page_count) {
+            MidPageData *page = &s_mid_pages[s_current_mid_mode];
+            int text_w = is_active ? (fill_w - 10) : (active_w - 10);
+            
+            int title_y = upper_h;
+            int unit_y = upper_h + mid_h - 20;
+            
+            int val_y;
+#if defined(PBL_PLATFORM_CHALK)
+            val_y = upper_h + (mid_h / 2) - 14; 
+#elif defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
+            val_y = upper_h + (mid_h / 2) - 24; 
+#else
+            val_y = upper_h + (mid_h / 2) - 20; 
+#endif
+
+            graphics_draw_text(ctx, page->value, s_font_long_time, GRect(5, val_y, active_w - 10, 48), 0, GTextAlignmentCenter, NULL);
+            graphics_draw_text(ctx, page->name, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(5, title_y, text_w, 20), 0, GTextAlignmentLeft, NULL);
+            graphics_draw_text(ctx, page->unit, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(5, unit_y, text_w, 20), 0, GTextAlignmentRight, NULL);
+        }
+        return;
+    }
+
+    int line_end_w = is_active ? (wt - mx) : (wt - ACTION_BAR_WIDTH - mx);
     graphics_draw_line(ctx, GPoint(mx, upper_h), GPoint(line_end_w, upper_h));
     graphics_draw_line(ctx, GPoint(mx, upper_h + mid_h), GPoint(line_end_w, upper_h + mid_h));
     
+    graphics_context_set_fill_color(ctx, is_active ? s_current_main_bg : s_current_main_fg);
     graphics_fill_circle(ctx, GPoint(lx, r1y), 3);
     graphics_draw_line(ctx, GPoint(lx - 2, r1y + 2), GPoint(lx, r1y + 6));
     graphics_draw_line(ctx, GPoint(lx + 2, r1y + 2), GPoint(lx, r1y + 6));
@@ -1292,16 +1394,18 @@ static void update_ui_state() {
 #endif
     if (s_action_bar && hide_cond) hide = true;
 
-    if (s_dist_layer) layer_set_hidden(text_layer_get_layer(s_dist_layer), hide);
-    if (s_step_layer) layer_set_hidden(text_layer_get_layer(s_step_layer), hide);
+    bool hide_mid = hide || !is_detail_mode();
+
+    if (s_dist_layer) layer_set_hidden(text_layer_get_layer(s_dist_layer), hide_mid);
+    if (s_step_layer) layer_set_hidden(text_layer_get_layer(s_step_layer), hide_mid);
     
     if (!s_has_hr_sensor) {
         if (s_hr_layer) layer_set_hidden(text_layer_get_layer(s_hr_layer), true);
     } else {
-        if (s_hr_layer) layer_set_hidden(text_layer_get_layer(s_hr_layer), hide);
+        if (s_hr_layer) layer_set_hidden(text_layer_get_layer(s_hr_layer), hide_mid);
     }
     
-    if (s_clock_layer) layer_set_hidden(text_layer_get_layer(s_clock_layer), hide);
+    if (s_clock_layer) layer_set_hidden(text_layer_get_layer(s_clock_layer), hide_mid);
 
     if ((s_app_state < 3 || s_app_state >= 5) && !hide) {
         if (!s_is_custom_marquee) {
@@ -1349,10 +1453,11 @@ static void update_ui_state() {
     if (s_time_colon2_layer) text_layer_set_text_color(s_time_colon2_layer, s_current_main_fg);
     if (s_time_sec_layer) text_layer_set_text_color(s_time_sec_layer, s_current_main_fg);
     
-    if (s_clock_layer) text_layer_set_text_color(s_clock_layer, s_current_main_fg);
-    if (s_dist_layer) text_layer_set_text_color(s_dist_layer, s_current_main_fg);
-    if (s_hr_layer) text_layer_set_text_color(s_hr_layer, s_current_main_fg);
-    if (s_step_layer) text_layer_set_text_color(s_step_layer, s_current_main_fg);
+    GColor mid_text_color = is_active ? s_current_main_bg : s_current_main_fg;
+    if (s_clock_layer) text_layer_set_text_color(s_clock_layer, mid_text_color);
+    if (s_dist_layer) text_layer_set_text_color(s_dist_layer, mid_text_color);
+    if (s_hr_layer) text_layer_set_text_color(s_hr_layer, mid_text_color);
+    if (s_step_layer) text_layer_set_text_color(s_step_layer, mid_text_color);
     if (s_msg_layer) text_layer_set_text_color(s_msg_layer, s_current_main_fg);
     
     if (s_action_bar) {
@@ -1403,6 +1508,27 @@ static void update_ui_state() {
         }
     }
     
+    if (s_mid_bg_layer && s_action_bar) {
+        if (is_active) {
+            layer_insert_above_sibling(s_mid_bg_layer, action_bar_layer_get_layer(s_action_bar));
+        } else {
+            layer_insert_below_sibling(s_mid_bg_layer, action_bar_layer_get_layer(s_action_bar));
+        }
+        
+        // テキストやグラフが背景・水平線の奥に隠れないように、全て手前に引き上げる
+        if (s_graph_layer) layer_insert_above_sibling(s_graph_layer, s_mid_bg_layer);
+        if (s_time_hour_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_hour_layer), s_mid_bg_layer);
+        if (s_time_colon1_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_colon1_layer), s_mid_bg_layer);
+        if (s_time_min_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_min_layer), s_mid_bg_layer);
+        if (s_time_colon2_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_colon2_layer), s_mid_bg_layer);
+        if (s_time_sec_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_sec_layer), s_mid_bg_layer);
+        if (s_dist_layer) layer_insert_above_sibling(text_layer_get_layer(s_dist_layer), s_mid_bg_layer);
+        if (s_step_layer) layer_insert_above_sibling(text_layer_get_layer(s_step_layer), s_mid_bg_layer);
+        if (s_hr_layer) layer_insert_above_sibling(text_layer_get_layer(s_hr_layer), s_mid_bg_layer);
+        if (s_clock_layer) layer_insert_above_sibling(text_layer_get_layer(s_clock_layer), s_mid_bg_layer);
+        if (s_msg_container_layer) layer_insert_above_sibling(s_msg_container_layer, s_mid_bg_layer);
+    }
+
     if (s_mid_bg_layer) layer_mark_dirty(s_mid_bg_layer);
     if (s_graph_layer) layer_mark_dirty(s_graph_layer);
     if (s_msg_container_layer) layer_mark_dirty(s_msg_container_layer);
@@ -1514,9 +1640,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             save_graphs_to_persist();
             if (s_graph_layer) layer_mark_dirty(s_graph_layer);
         }
-        else if (t->key == MESSAGE_KEY_TOUCH_ENABLE) {
-            s_is_touch_enabled = (get_int(t) == 1);
-            persist_write_int(PK_TOUCH_ENABLE, s_is_touch_enabled ? 1 : 0);
+        else if (t->key == MESSAGE_KEY_MID_DATA) {
+            parse_mid_data(t->value->cstring);
+            if (s_mid_bg_layer) layer_mark_dirty(s_mid_bg_layer);
         }
         else if (t->key == MESSAGE_KEY_ACTIVITY_TYPE) {
             int received_type = get_int(t);
@@ -1761,9 +1887,13 @@ static void main_window_load(Window *window) {
     s_font_colon = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
     s_font_mid_data = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
     
-    use_overlap = false;
-    m3w = 76; c3w = 12; s3w = 76;
-    h5w = 42; c1w = 10; m5w = 54; c2w = 10; s5w = 54;
+    use_overlap = true;
+    // 枠幅は見切れないよう余裕を持たせる
+    m3w = 80; c3w = 16; s3w = 80;
+    vm3 = 68; vc3 = 8; vs3 = 68; // 実際の配置間隔（ここで中央に寄せています）
+    
+    h5w = 48; c1w = 14; m5w = 60; c2w = 14; s5w = 60;
+    vh5 = 42; vc1 = 6; vm5 = 54; vc2 = 6; vs5 = 54;
     r_h3 = 68; r_h5 = 60;
     
     int h3 = h / 3;
@@ -2021,7 +2151,7 @@ static void main_window_unload(Window *window) {
 
 static void init() {
     app_message_register_inbox_received(inbox_received_callback);
-    app_message_open(256, 256);
+    app_message_open(1024, 256);
     tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
 
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)

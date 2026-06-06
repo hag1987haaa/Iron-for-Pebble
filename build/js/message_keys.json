@@ -6,6 +6,7 @@
     "HR": 10007,
     "KEY_TOUCH_ENABLE": 10011,
     "MEDIA_CMD": 10008,
+    "MID_DATA": 10013,
     "PACE": 10003,
     "STATE": 10004,
     "TIME": 10001
