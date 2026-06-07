@@ -1338,9 +1338,11 @@ static void mid_bg_update_proc(Layer *layer, GContext *ctx) {
         return;
     }
 
-    int line_end_w = is_active ? (wt - mx) : (wt - ACTION_BAR_WIDTH - mx);
-    graphics_draw_line(ctx, GPoint(mx, upper_h), GPoint(line_end_w, upper_h));
-    graphics_draw_line(ctx, GPoint(mx, upper_h + mid_h), GPoint(line_end_w, upper_h + mid_h));
+    if (!is_active) {
+        int line_end_w = wt - ACTION_BAR_WIDTH - mx;
+        graphics_draw_line(ctx, GPoint(mx, upper_h), GPoint(line_end_w, upper_h));
+        graphics_draw_line(ctx, GPoint(mx, upper_h + mid_h), GPoint(line_end_w, upper_h + mid_h));
+    }
     
     graphics_context_set_fill_color(ctx, is_active ? s_current_main_bg : s_current_main_fg);
     graphics_fill_circle(ctx, GPoint(lx, r1y), 3);
@@ -1655,7 +1657,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         }
         else if (t->key == MESSAGE_KEY_MID_DATA) {
             parse_mid_data(t->value->cstring);
-            if (s_mid_bg_layer) layer_mark_dirty(s_mid_bg_layer);
+            update_ui_state();
         }
         else if (t->key == MESSAGE_KEY_ACTIVITY_TYPE) {
             int received_type = get_int(t);
