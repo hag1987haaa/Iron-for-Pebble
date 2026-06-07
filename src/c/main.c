@@ -863,6 +863,7 @@ static void destroy_marquee_layers() {
         s_msg_container_layer = NULL;
     }
     s_is_custom_marquee = false;
+    if (s_graph_layer) layer_mark_dirty(s_graph_layer);
 }
 
 static void create_marquee_layers() {
@@ -895,6 +896,8 @@ static void create_marquee_layers() {
     text_layer_set_font(s_msg_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
     text_layer_set_background_color(s_msg_layer, GColorClear);
     layer_add_child(s_msg_container_layer, text_layer_get_layer(s_msg_layer));
+
+    if (s_graph_layer) layer_mark_dirty(s_graph_layer);
 }
 
 static void anim_stopped_handler(Animation *animation, bool finished, void *context) {
@@ -1020,9 +1023,13 @@ static void graph_update_proc(Layer *layer, GContext *ctx) {
     int bw = dw / (s_graph_count > 0 ? s_graph_count : 1);
     if (bw < 2) bw = 2;
     
-    // スマホから送られてきたラベルをそのまま描画
-    graphics_draw_text(ctx, s_graph_y_label, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(pl, 4, b.size.w, 16), 0, GTextAlignmentLeft, NULL);
-    graphics_draw_text(ctx, s_graph_x_label, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, 4, b.size.w - 4, 16), 0, GTextAlignmentRight, NULL);
+    bool show_labels = (s_msg_container_layer == NULL);
+    
+    if (show_labels) {
+        // スマホから送られてきたラベルをそのまま描画
+        graphics_draw_text(ctx, s_graph_y_label, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(pl, 4, b.size.w, 16), 0, GTextAlignmentLeft, NULL);
+        graphics_draw_text(ctx, s_graph_x_label, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, 4, b.size.w - 4, 16), 0, GTextAlignmentRight, NULL);
+    }
     
     if (s_graph_count <= 0) return;
     
@@ -1147,15 +1154,17 @@ static void graph_update_proc(Layer *layer, GContext *ctx) {
             prev_y = y;
         }
 
-        char max_str[16], min_str[16];
-        snprintf(max_str, 16, "%dm", p_max);
-        snprintf(min_str, 16, "%dm", p_min);
-        
-        int lbl_w = 42;
-        int lbl_x = b.size.w - lbl_w;
-        int lbl_h = 16;
-        graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
-        graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+        if (show_labels) {
+            char max_str[16], min_str[16];
+            snprintf(max_str, 16, "%dm", p_max);
+            snprintf(min_str, 16, "%dm", p_min);
+            
+            int lbl_w = 42;
+            int lbl_x = b.size.w - lbl_w;
+            int lbl_h = 16;
+            graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+        }
     } else if (s_graph_id == 4) {
         int p_min = 999999, p_max = -1;
         for (int i = 0; i < s_graph_count; i++) {
@@ -1197,15 +1206,17 @@ static void graph_update_proc(Layer *layer, GContext *ctx) {
             prev_y = y;
         }
 
-        char max_str[8], min_str[8];
-        snprintf(max_str, 8, "%d", p_max);
-        snprintf(min_str, 8, "%d", p_min);
-        
-        int lbl_w = 28;
-        int lbl_x = b.size.w - lbl_w;
-        int lbl_h = 16;
-        graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
-        graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+        if (show_labels) {
+            char max_str[8], min_str[8];
+            snprintf(max_str, 8, "%d", p_max);
+            snprintf(min_str, 8, "%d", p_min);
+            
+            int lbl_w = 28;
+            int lbl_x = b.size.w - lbl_w;
+            int lbl_h = 16;
+            graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+        }
     } else if (s_graph_id == 5) {
         // Calories: 棒グラフ表現と最大値(kcal)の表示
         int p_max = 1;
@@ -1219,10 +1230,12 @@ static void graph_update_proc(Layer *layer, GContext *ctx) {
             if (bar_w < 1) bar_w = 1; 
             graphics_fill_rect(ctx, GRect(pl + i * bw, b.size.h - bh, bar_w, bh), 0, GCornerNone);
         }
-        int lbl_w = 48;
-        int lbl_x = b.size.w - lbl_w;
-        int lbl_h = 16;
-        graphics_draw_text(ctx, s_graph_max_label, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+        if (show_labels) {
+            int lbl_w = 48;
+            int lbl_x = b.size.w - lbl_w;
+            int lbl_h = 16;
+            graphics_draw_text(ctx, s_graph_max_label, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+        }
     }
 }
 
