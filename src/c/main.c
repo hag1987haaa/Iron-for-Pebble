@@ -1322,16 +1322,19 @@ static void mid_bg_update_proc(Layer *layer, GContext *ctx) {
             int title_y = upper_h;
             int unit_y = upper_h + mid_h - 20;
             
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
+            int val_y = upper_h + (mid_h / 2) - 34; 
+            graphics_draw_text(ctx, page->value, fonts_get_system_font(FONT_KEY_LECO_60_NUMBERS_AM_PM), GRect(0, val_y, active_w, 70), 0, GTextAlignmentCenter, NULL);
+#else
             int val_y;
 #if defined(PBL_PLATFORM_CHALK)
             val_y = upper_h + (mid_h / 2) - 14; 
-#elif defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
-            val_y = upper_h + (mid_h / 2) - 24; 
 #else
             val_y = upper_h + (mid_h / 2) - 20; 
 #endif
 
             graphics_draw_text(ctx, page->value, s_font_long_time, GRect(5, val_y, active_w - 10, 48), 0, GTextAlignmentCenter, NULL);
+#endif
             graphics_draw_text(ctx, page->name, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(5, title_y, text_w, 20), 0, GTextAlignmentLeft, NULL);
             graphics_draw_text(ctx, page->unit, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(5, unit_y, text_w, 20), 0, GTextAlignmentRight, NULL);
         }
@@ -1834,7 +1837,7 @@ static void main_window_load(Window *window) {
     row1_y = upper_h + 5; row2_y = upper_h + 33;
 
 #elif defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
-    s_font_huge_time = fonts_get_system_font("RESOURCE_ID_LECO_42_NUMBERS");
+    s_font_huge_time = fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS);
     s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_32_BOLD_NUMBERS);
     s_font_colon = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
     s_font_mid_data = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
@@ -1861,7 +1864,7 @@ static void main_window_load(Window *window) {
     row1_y = upper_h + 5; row2_y = upper_h + 33;
 
 #elif defined(PBL_PLATFORM_CHALK)
-    s_font_huge_time = fonts_get_system_font("RESOURCE_ID_LECO_42_NUMBERS");
+    s_font_huge_time = fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS);
     s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
     s_font_colon = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
     s_font_mid_data = fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
@@ -1897,8 +1900,8 @@ static void main_window_load(Window *window) {
     row2_y = row1_y + row_h;
 
 #elif defined(PBL_PLATFORM_EMERY)
-    s_font_huge_time = fonts_get_system_font("RESOURCE_ID_LECO_60_NUMBERS_AM_PM");
-    s_font_long_time = fonts_get_system_font("RESOURCE_ID_LECO_42_NUMBERS");
+    s_font_huge_time = fonts_get_system_font(FONT_KEY_LECO_60_NUMBERS_AM_PM);
+    s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS);
     s_font_colon = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
     s_font_mid_data = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
     
@@ -1930,7 +1933,7 @@ static void main_window_load(Window *window) {
     row1_y = upper_h + 5; row2_y = upper_h + 33;
 
 #elif defined(PBL_PLATFORM_GABBRO)
-    s_font_huge_time = fonts_get_system_font("RESOURCE_ID_LECO_60_NUMBERS_AM_PM");
+    s_font_huge_time = fonts_get_system_font(FONT_KEY_LECO_60_NUMBERS_AM_PM);
     s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_38_BOLD_NUMBERS);
     s_font_colon = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
     s_font_mid_data = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
@@ -1964,7 +1967,7 @@ static void main_window_load(Window *window) {
     row1_y = upper_h + (mid_h - row_h * 2) / 2 - 2;
     row2_y = row1_y + row_h;
 #else
-    s_font_huge_time = fonts_get_system_font("RESOURCE_ID_LECO_42_NUMBERS");
+    s_font_huge_time = fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS);
     s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_32_BOLD_NUMBERS);
     s_font_colon = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
     s_font_mid_data = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
