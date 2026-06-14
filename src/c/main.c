@@ -16,7 +16,6 @@
 #define MESSAGE_KEY_MID_DATA 10013
 #define MESSAGE_KEY_ACTIVITY_TYPE 10012
 
-#define PK_START_STEPS 51
 #define PK_GRAPH_COUNT 53
 #define PK_GRAPH_DATA 54
 #define PK_GRAPH_ID 55
@@ -107,7 +106,7 @@ static bool s_is_long_workout = false;
 static bool s_has_hr_sensor = false; 
 static bool s_is_custom_marquee = false;
 
-static int s_start_steps = 0, s_pause_start_steps = 0, s_current_hr = 0;
+static int s_current_hr = 0;
 
 #define MAX_GRAPH_DATA 45 
 static int s_graph_data[MAX_GRAPH_DATA]; 
@@ -250,11 +249,9 @@ static void save_graphs_to_persist() {
     persist_write_data(PK_GRAPH_DATA, s_graph_data, sizeof(s_graph_data));
     persist_write_int(PK_GRAPH_ID, s_graph_id);
     persist_write_int(PK_GRAPH_SCALE, s_graph_scale);
-    persist_write_int(PK_START_STEPS, s_start_steps);
 }
 
 static void load_persist_data() {
-    if (persist_exists(PK_START_STEPS)) s_start_steps = persist_read_int(PK_START_STEPS);
     if (persist_exists(PK_GRAPH_COUNT)) s_graph_count = persist_read_int(PK_GRAPH_COUNT);
     if (persist_exists(PK_GRAPH_DATA)) persist_read_data(PK_GRAPH_DATA, s_graph_data, sizeof(s_graph_data));
     if (persist_exists(PK_GRAPH_ID)) s_graph_id = persist_read_int(PK_GRAPH_ID);
@@ -273,11 +270,6 @@ static void clear_graph_data() {
     s_graph_id = 0;
     s_graph_scale = 1;
     memset(s_graph_data, 0, sizeof(s_graph_data));
-#if defined(PBL_HEALTH)
-    s_start_steps = (int)health_service_sum_today(HealthMetricStepCount);
-#else
-    s_start_steps = 0;
-#endif
     save_graphs_to_persist();
     if (s_graph_layer) layer_mark_dirty(s_graph_layer);
 }
@@ -1575,17 +1567,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         else if (t->key == MESSAGE_KEY_STATE) {
             uint8_t ps = (uint8_t)get_int(t);
             if (ps != s_app_state) {
-#if defined(PBL_HEALTH)
-                int total = (int)health_service_sum_today(HealthMetricStepCount);
-#else
-                int total = 0;
-#endif
-                if (s_app_state == 3 && ps == 4) {
-                    s_pause_start_steps = total;
-                } else if (s_app_state == 4 && ps == 3) {
-                    s_start_steps += (total - s_pause_start_steps);
-                    persist_write_int(PK_START_STEPS, s_start_steps);
-                }
                 if (ps == 1 && s_app_state != 1) clear_graph_data();
                 
                 s_app_state = ps;
@@ -1648,6 +1629,17 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         else if (t->key == MESSAGE_KEY_DISTANCE) {
             snprintf(s_dist_buf, 16, "%s", t->value->cstring);
             if (s_dist_layer) text_layer_set_text(s_dist_layer, s_dist_buf);
+        }
+        else if (t->key == KEY_STEPS) {
+            // Androidからのデータが文字列でも数値でも柔軟に対応して表示
+            if (t->type == TUPLE_CSTRING) {
+                snprintf(s_step_buf, 16, "%s", t->value->cstring);
+            } else {
+                int ds = get_int(t);
+                if (ds >= 10000) snprintf(s_step_buf, 16, "%d.%dK", ds / 1000, (ds % 1000) / 100);
+                else snprintf(s_step_buf, 16, "%d", ds);
+            }
+            if (s_step_layer) text_layer_set_text(s_step_layer, s_step_buf);
         }
         else if (t->key == MESSAGE_KEY_HR && s_has_hr_sensor) {
             snprintf(s_hr_buf, 16, "%s", t->value->cstring);
@@ -1738,31 +1730,15 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     }
 #endif
     
-    int ds = (total - s_start_steps >= 0) ? total - s_start_steps : 0;
     if (s_app_state == 3 && tick_time->tm_sec % 5 == 0) {
         DictionaryIterator *it;
         if (app_message_outbox_begin(&it) == APP_MSG_OK) {
             dict_write_int32(it, KEY_HR, s_current_hr);
-            dict_write_int32(it, KEY_STEPS, ds);
+            // ウォッチ側では差分計算をせず、Pebble Healthの当日の総歩数をそのままAndroidへ送信する
+            dict_write_int32(it, KEY_STEPS, total);
             app_message_outbox_send();
         }
     }
-    
-    static int last_ds = -1;
-#if defined(PBL_HEALTH)
-    if (ds != last_ds) {
-        last_ds = ds;
-        if (ds >= 10000) snprintf(s_step_buf, 16, "%d.%dK", ds / 1000, (ds % 1000) / 100);
-        else snprintf(s_step_buf, 16, "%d", ds);
-        if (s_step_layer) text_layer_set_text(s_step_layer, s_step_buf);
-    }
-#else
-    if (last_ds != -2) {
-        snprintf(s_step_buf, 16, "--");
-        last_ds = -2;
-        if (s_step_layer) text_layer_set_text(s_step_layer, s_step_buf);
-    }
-#endif
 }
 
 /* ==========================================================
