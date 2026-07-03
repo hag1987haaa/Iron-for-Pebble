@@ -6,6 +6,7 @@
 
 #define KEY_STEPS 10010
 #define KEY_HR 10007
+#define KEY_HR_INTERVAL 10014
 #define MESSAGE_KEY_CMD 10000
 #define MESSAGE_KEY_TIME 10001
 #define MESSAGE_KEY_DISTANCE 10002
@@ -107,6 +108,7 @@ static bool s_has_hr_sensor = false;
 static bool s_is_custom_marquee = false;
 
 static int s_current_hr = 0;
+static int32_t s_hr_interval_setting = 0; // 0:default, 正:Raw, 負:Filtered
 
 #define MAX_GRAPH_DATA 45 
 static int s_graph_data[MAX_GRAPH_DATA]; 
@@ -1567,6 +1569,14 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         else if (t->key == MESSAGE_KEY_STATE) {
             uint8_t ps = (uint8_t)get_int(t);
             if (ps != s_app_state) {
+                if (s_app_state == 3 && ps != 3) { // ワークアウト終了時
+#if defined(PBL_HEALTH)
+                    if (s_has_hr_sensor) {
+                        health_service_set_heart_rate_sample_period(0); // サンプリング周期をリセット
+                    }
+#endif
+                }
+
                 if (ps == 1 && s_app_state != 1) clear_graph_data();
                 
                 s_app_state = ps;
@@ -1665,6 +1675,15 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                 }
             }
         }
+        else if (t->key == KEY_HR_INTERVAL) {
+#if defined(PBL_HEALTH)
+            if (s_has_hr_sensor) {
+                s_hr_interval_setting = get_int(t);
+                // The tick_handler will now dynamically manage the sampling period
+                // during a workout based on this new setting.
+            }
+#endif
+        }
         t = dict_read_next(iterator);
     }
 }
@@ -1678,12 +1697,6 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
             text_layer_set_text(s_clock_layer, s_clock_buf);
         }
     }
-    
-#if defined(PBL_HEALTH)
-    int total = (int)health_service_sum_today(HealthMetricStepCount);
-#else
-    int total = 0;
-#endif
     
     static int state0_demo_timer = 0;
     if (s_app_state == 0) {
@@ -1704,19 +1717,21 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     }
 
 #if defined(PBL_HEALTH)
-    static int last_hr = -1;
+    static int last_hr_display = -1;
     if (s_has_hr_sensor) {
-        s_current_hr = (int)health_service_peek_current_value(HealthMetricHeartRateBPM);
-        if (s_current_hr != last_hr) {
-            last_hr = s_current_hr;
+        // s_hr_interval_setting > 0 ならRaw値、それ以外はOSフィルタ値を取得
+        HealthMetric metric_to_peek = (s_hr_interval_setting > 0) ? HealthMetricHeartRateRawBPM : HealthMetricHeartRateBPM;
+        s_current_hr = (int)health_service_peek_current_value(metric_to_peek);
+        if (s_current_hr != last_hr_display) {
+            last_hr_display = s_current_hr;
             if (s_current_hr < 30) snprintf(s_hr_buf, 16, "--");
             else snprintf(s_hr_buf, 16, "%d", s_current_hr);
             if (s_hr_layer) text_layer_set_text(s_hr_layer, s_hr_buf);
         }
     } else {
-        if (last_hr != -2) {
+        if (last_hr_display != -2) {
             snprintf(s_hr_buf, 16, "--");
-            last_hr = -2;
+            last_hr_display = -2;
         }
     }
 #else
@@ -1729,16 +1744,100 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         update_ui_state();
     }
 #endif
-    
-    if (s_app_state == 3 && tick_time->tm_sec % 5 == 0) {
-        DictionaryIterator *it;
-        if (app_message_outbox_begin(&it) == APP_MSG_OK) {
-            dict_write_int32(it, KEY_HR, s_current_hr);
-            // ウォッチ側では差分計算をせず、Pebble Healthの当日の総歩数をそのままAndroidへ送信する
-            dict_write_int32(it, KEY_STEPS, total);
-            app_message_outbox_send();
+
+    static int s_seconds_counter = 0;
+#if defined(PBL_HEALTH)
+    static int last_sent_hr = 0;
+    static int hr_no_change_counter = 0;
+    static uint32_t s_current_sampling_period = 9999; // Use a value that forces update
+#endif
+    static uint8_t last_tick_app_state = 0;
+
+    if (s_app_state == 3) {
+        if (last_tick_app_state != 3) { // ワークアウト開始時
+            s_seconds_counter = 0;
+#if defined(PBL_HEALTH)
+            last_sent_hr = 0;
+            hr_no_change_counter = 0;
+            s_current_sampling_period = 9999; // Force update on first tick of workout
+#endif
+        }
+        s_seconds_counter++;
+
+#if defined(PBL_HEALTH)
+        if (s_has_hr_sensor) {
+            bool should_send_steps = (s_seconds_counter % 5 == 0);
+            bool should_send_hr = false;
+            uint32_t target_sample_period = 0;
+
+            int32_t interval = s_hr_interval_setting;
+
+            const int BURST_APPLIES_ABOVE_INTERVAL = 10;
+            bool burst_mode_applies = (interval > BURST_APPLIES_ABOVE_INTERVAL);
+
+            if (burst_mode_applies) { // Front-load burst for intervals > 10s (30, 60, 300)
+                const int BURST_TOTAL_DURATION = 10;
+                const int BURST_WARMUP_DURATION = 5;
+                int seconds_into_cycle = (s_seconds_counter - 1) % interval;
+                bool is_in_burst_window = (seconds_into_cycle < BURST_TOTAL_DURATION);
+
+                if (is_in_burst_window) {
+                    target_sample_period = 1; // Sensor ON for the whole burst window
+                    
+                    // Send only during the measurement phase (after warmup)
+                    if (seconds_into_cycle >= BURST_WARMUP_DURATION) {
+                        should_send_hr = true; // Force send every second for smoothing on Android
+                    }
+                } else {
+                    target_sample_period = 0; // Sensor OFF (Sleep)
+                }
+
+            } else { // Continuous Sampling Mode (for intervals 1, 10, and negative/stable)
+                if (interval < 0) { // Stable mode
+                    target_sample_period = abs(interval);
+                } else if (interval > 0) { // Fast continuous modes (1s, 10s)
+                    target_sample_period = 1;
+                } else {
+                    target_sample_period = 0; // Default mode
+                }
+
+                // Use value-change logic for sending to save battery in non-burst modes
+                bool hr_value_changed = (s_current_hr != last_sent_hr);
+                if (!hr_value_changed) hr_no_change_counter++;
+                should_send_hr = hr_value_changed || (hr_no_change_counter >= 5);
+            }
+
+            // Apply sampling period change only when necessary
+            if (target_sample_period != s_current_sampling_period) {
+                health_service_set_heart_rate_sample_period(target_sample_period);
+                s_current_sampling_period = target_sample_period;
+            }
+
+            // Send Data
+            DictionaryIterator *it;
+            if ((should_send_steps || should_send_hr) && app_message_outbox_begin(&it) == APP_MSG_OK) {
+                if (should_send_steps) dict_write_int32(it, KEY_STEPS, (int)health_service_sum_today(HealthMetricStepCount));
+                if (should_send_hr) {
+                    dict_write_int32(it, KEY_HR, s_current_hr);
+                    last_sent_hr = s_current_hr;
+                    hr_no_change_counter = 0;
+                }
+                app_message_outbox_send();
+            }
+        }
+
+#endif
+    } else { // ワークアウト中でない
+        if (last_tick_app_state == 3) { // ワークアウトがちょうど終了した
+#if defined(PBL_HEALTH)
+            if (s_current_sampling_period != 0) {
+                health_service_set_heart_rate_sample_period(0);
+                s_current_sampling_period = 0;
+            }
+#endif
         }
     }
+    last_tick_app_state = s_app_state;
 }
 
 /* ==========================================================
@@ -2161,6 +2260,11 @@ static void init() {
 }
 
 static void deinit() {
+#if defined(PBL_HEALTH)
+    if (s_has_hr_sensor) {
+        health_service_set_heart_rate_sample_period(0);
+    }
+#endif
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
     touch_service_unsubscribe();
 #endif

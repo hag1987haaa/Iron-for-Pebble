@@ -30,9 +30,11 @@
   "HR": 10007,
   "MEDIA_CMD": 10008,
   "GRAPH_DATA": 10009,
+  "KEY_STEPS": 10010,
   "KEY_TOUCH_ENABLE":10011,
   "ACTIVITY_TYPE": 10012,
-  "MID_DATA": 10013
+  "MID_DATA": 10013,
+  "KEY_HR_INTERVAL": 10014
 },
         "projectType": "native",
 "resources": {
