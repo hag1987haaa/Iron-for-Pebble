@@ -21,23 +21,26 @@
         },
         "displayName": "Iron",
         "enableMultiJS": true,
-"messageKeys": {
-  "CMD": 10000,
-  "TIME": 10001,
-  "DISTANCE": 10002,
-  "PACE": 10003,
-  "STATE": 10004,
-  "HR": 10007,
-  "MEDIA_CMD": 10008,
-  "GRAPH_DATA": 10009,
-  "KEY_STEPS": 10010,
-  "KEY_TOUCH_ENABLE":10011,
-  "ACTIVITY_TYPE": 10012,
-  "MID_DATA": 10013,
-  "KEY_HR_INTERVAL": 10014
-},
+        "messageKeys": {
+            "CMD": 10000,
+            "TIME": 10001,
+            "DISTANCE": 10002,
+            "PACE": 10003,
+            "STATE": 10004,
+            "HR": 10007,
+            "MEDIA_CMD": 10008,
+            "GRAPH_DATA": 10009,
+            "KEY_STEPS": 10010,
+            "KEY_TOUCH_ENABLE": 10011,
+            "ACTIVITY_TYPE": 10012,
+            "MID_DATA": 10013,
+            "KEY_HR_INTERVAL": 10014,
+            "MID_ID": 10015,
+            "LOWER_ID": 10016,
+            "LOWER_DATA": 10017
+        },
         "projectType": "native",
-"resources": {
+        "resources": {
             "media": [
                 {
                     "file": "images/Iron_Pebble_App_icon_2525.png",
@@ -167,8 +170,7 @@
                     "type": "png"
                 }
             ]
-        
-    },
+        },
         "sdkVersion": "3",
         "targetPlatforms": [
             "aplite",
@@ -184,5 +186,5 @@
             "watchface": false
         }
     },
-    "version": "1.1.0"
+    "version": "1.2.0"
 }

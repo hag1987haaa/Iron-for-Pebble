@@ -27,7 +27,10 @@
         "KEY_TOUCH_ENABLE": 10011,
         "ACTIVITY_TYPE": 10012,
         "MID_DATA": 10013,
-        "KEY_HR_INTERVAL": 10014
+        "KEY_HR_INTERVAL": 10014,
+        "MID_ID": 10015,
+        "LOWER_ID": 10016,
+        "LOWER_DATA": 10017
     },
     "projectType": "native",
     "resources": {
@@ -178,7 +181,7 @@
     "name": "iron",
     "shortName": "Iron",
     "longName": "Iron",
-    "versionLabel": "1.1.0",
+    "versionLabel": "1.2.0",
     "companyName": "1987haaa",
     "appKeys": {
         "CMD": 10000,
@@ -193,6 +196,9 @@
         "KEY_TOUCH_ENABLE": 10011,
         "ACTIVITY_TYPE": 10012,
         "MID_DATA": 10013,
-        "KEY_HR_INTERVAL": 10014
+        "KEY_HR_INTERVAL": 10014,
+        "MID_ID": 10015,
+        "LOWER_ID": 10016,
+        "LOWER_DATA": 10017
     }
 }
