@@ -4,9 +4,9 @@
 
 static Layer *s_color_picker_layer = NULL;
 static bool s_is_color_picking = false;
-static int s_selected_color_idx = 24; // GColorIslamicGreenARGB8
+static int s_selected_color_idx = 63; // GColorWhiteARGB8
 static bool s_preview_is_running = false; 
-static uint8_t s_personal_color_argb = GColorIslamicGreenARGB8; 
+static uint8_t s_personal_color_argb = GColorWhiteARGB8; 
 static GColor s_current_bg, s_current_fg;
 
 static void color_picker_update_proc(Layer *layer, GContext *ctx) {

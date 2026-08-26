@@ -76,6 +76,11 @@ void ui_intermediate_menu_handle_down(void) {
 
 int ui_intermediate_menu_get_selected_idx(void) { return s_intermediate_idx; }
 
+void ui_intermediate_menu_set_selected_idx(int idx) {
+    s_intermediate_idx = (idx % 2 + 2) % 2;
+    if (s_intermediate_layer) layer_mark_dirty(s_intermediate_layer);
+}
+
 void ui_intermediate_menu_update_colors(GColor main_bg, GColor main_fg) {
     s_current_bg = main_bg;
     s_current_fg = main_fg;

@@ -39,7 +39,7 @@ static bool s_has_hr_sensor = false;
 
 static int s_current_hr = 0;
 static ActivityType s_current_activity = ACTIVITY_RUNNING;
-static int s_selected_color_idx = 24; // GColorIslamicGreenARGB8
+static int s_selected_color_idx = 63; // GColorWhiteARGB8
 
 static GRect s_rect_hour_5, s_rect_col1_5, s_rect_min_5, s_rect_col2_5, s_rect_sec_5, s_rect_min_3, s_rect_col2_3, s_rect_sec_3;
 
@@ -141,18 +141,18 @@ static void touch_event_handler(const TouchEvent *event, void *context) {
 
             if (dt < SWIPE_MAX_TIME_MS && (abs_dx > SWIPE_MIN_DIST_PX || abs_dy > SWIPE_MIN_DIST_PX)) {
                 if (abs_dx > abs_dy * 2) {
-                    if (dx > 0) comm_service_send_media_cmd(3); // PREV
-                    else comm_service_send_media_cmd(2);        // NEXT
+                    if (dx > 0) comm_service_send_media_event(EVENT_TOUCH_SWIPE_RIGHT, 3); // PREV
+                    else comm_service_send_media_event(EVENT_TOUCH_SWIPE_LEFT, 2);        // NEXT
                 } else if (abs_dy > abs_dx * 2) {
-                    if (dy > 0) comm_service_send_media_cmd(5); // VOL DOWN
-                    else comm_service_send_media_cmd(4);        // VOL UP
+                    if (dy > 0) comm_service_send_media_event(EVENT_TOUCH_SWIPE_DOWN, 5); // VOL DOWN
+                    else comm_service_send_media_event(EVENT_TOUCH_SWIPE_UP, 4);        // VOL UP
                 }
                 vibes_short_pulse();
                 s_last_tap_time = 0; 
             } 
             else if (abs_dx <= TAP_MAX_DIST_PX && abs_dy <= TAP_MAX_DIST_PX) {
                 if (s_last_tap_time != 0 && (current_time - s_last_tap_time) < DOUBLE_TAP_MAX_DELAY_MS) {
-                    comm_service_send_media_cmd(1); // PLAY/PAUSE
+                    comm_service_send_media_event(EVENT_TOUCH_DOUBLE_TAP, 1); // PLAY/PAUSE
                     vibes_short_pulse();
                     s_last_tap_time = 0; 
                 } else {
@@ -185,10 +185,10 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (s_ignore_single_click) return;
 
     if (s_app_state <= 4) {
-        comm_service_send_cmd(1);
+        comm_service_send_button_event(EVENT_BUTTON_UP_CLICK, 1);
         vibes_short_pulse();
     } else if (s_app_state == 5) {
-        comm_service_send_cmd(7);
+        comm_service_send_button_event(EVENT_BUTTON_UP_CLICK, 7);
         vibes_short_pulse();
     }
 }
@@ -279,10 +279,10 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         update_ui_state();
         vibes_short_pulse();
     } else if (s_app_state == 4) {
-        comm_service_send_cmd(2);
+        comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK, 2);
         vibes_short_pulse();
     } else if (s_app_state == 6) {
-        comm_service_send_cmd(9);
+        comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK, 9);
         vibes_short_pulse();
     }
 }
@@ -332,10 +332,10 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     }
 
     if (s_app_state != 5) {
-        comm_service_send_cmd(6);
+        comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK, 6);
         vibes_short_pulse();
     } else if (s_app_state == 5) {
-        comm_service_send_cmd(8);
+        comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK, 8);
         vibes_short_pulse();
     }
 }
@@ -361,7 +361,7 @@ static void up_long_click_release_handler(ClickRecognizerRef recognizer, void *c
     
     if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
 
-    comm_service_send_cmd(50);
+    comm_service_send_button_event(EVENT_BUTTON_UP_LONG, 50);
     ui_marquee_trigger_custom("UP LONG SEND", s_current_main_fg, s_current_main_bg, s_app_state);
     vibes_short_pulse();
 }
@@ -376,7 +376,7 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
     
     if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
 
-    comm_service_send_cmd(51);
+    comm_service_send_button_event(EVENT_BUTTON_SELECT_LONG, 51);
     ui_marquee_trigger_custom("SELECT LONG SEND", s_current_main_fg, s_current_main_bg, s_app_state);
     vibes_short_pulse();
 }
@@ -391,12 +391,74 @@ static void down_long_click_release_handler(ClickRecognizerRef recognizer, void 
     
     if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
 
-    comm_service_send_cmd(52);
+    comm_service_send_button_event(EVENT_BUTTON_DOWN_LONG, 52);
     ui_marquee_trigger_custom("DOWN LONG SEND", s_current_main_fg, s_current_main_bg, s_app_state);
     vibes_short_pulse();
 }
 
+static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
+#if defined(PBL_COLOR)
+    if (ui_color_picker_is_active() && s_action_bar) {
+        ui_color_picker_set_selected_idx(s_selected_color_idx);
+        ui_color_picker_destroy();
+        ui_intermediate_menu_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
+        ui_intermediate_menu_set_selected_idx(1);
+        if (s_action_bar && s_main_window) {
+            action_bar_layer_remove_from_window(s_action_bar);
+            action_bar_layer_add_to_window(s_action_bar, s_main_window);
+        }
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
+    if (ui_activity_picker_is_active() && s_action_bar) {
+        ui_activity_picker_set_preview_activity(s_current_activity);
+        ui_activity_picker_destroy();
+        ui_intermediate_menu_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
+        ui_intermediate_menu_set_selected_idx(0);
+        if (s_action_bar && s_main_window) {
+            action_bar_layer_remove_from_window(s_action_bar);
+            action_bar_layer_add_to_window(s_action_bar, s_main_window);
+        }
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
+    if (ui_intermediate_menu_is_active() && s_action_bar) {
+        ui_intermediate_menu_destroy();
+        if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, false);
+        if (s_graph_layer) layer_set_hidden(s_graph_layer, false);
+        if (s_action_bar && s_main_window) {
+            action_bar_layer_remove_from_window(s_action_bar);
+            action_bar_layer_add_to_window(s_action_bar, s_main_window);
+        }
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
+#else
+    if (ui_activity_picker_is_active() && s_action_bar) {
+        ui_activity_picker_set_preview_activity(s_current_activity);
+        ui_activity_picker_destroy();
+        if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, false);
+        if (s_graph_layer) layer_set_hidden(s_graph_layer, false);
+        if (s_action_bar && s_main_window) {
+            action_bar_layer_remove_from_window(s_action_bar);
+            action_bar_layer_add_to_window(s_action_bar, s_main_window);
+        }
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
+#endif
+
+    // 最上位層（メイン待機画面）：ウォッチフェイス画面に戻る（アプリ終了）
+    window_stack_pop(true);
+}
+
 static void click_config_provider(void *context) {
+    window_single_click_subscribe(BUTTON_ID_BACK, back_click_handler);
+
     bool custom_clicks = ui_activity_picker_is_active();
 #if defined(PBL_COLOR)
     custom_clicks = custom_clicks || ui_color_picker_is_active() || ui_intermediate_menu_is_active();

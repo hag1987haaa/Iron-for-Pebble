@@ -51,7 +51,7 @@ void graph_data_load_from_persist(ActivityType *out_activity, int *out_color_idx
         if (persist_exists(PK_PERSONAL_COLOR)) {
             *out_color_idx = persist_read_int(PK_PERSONAL_COLOR);
         } else {
-            *out_color_idx = 24; // GColorIslamicGreenARGB8
+            *out_color_idx = 63; // GColorWhiteARGB8
         }
     }
 #endif

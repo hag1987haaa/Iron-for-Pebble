@@ -7,6 +7,10 @@ typedef void (*CommServiceGraphDirtyCallback)(void);
 
 void comm_service_init(CommServiceUIUpdateCallback ui_update_cb, CommServiceGraphDirtyCallback graph_dirty_cb);
 void comm_service_send_cmd(int val);
+void comm_service_send_button_event(AppEventID event_id, int legacy_cmd);
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
+void comm_service_send_media_event(AppEventID event_id, int legacy_media_cmd);
+#endif
 void comm_service_send_activity_type(ActivityType type);
 void comm_service_send_mid_id(int mid_id);
 void comm_service_send_lower_id(int lower_id);
