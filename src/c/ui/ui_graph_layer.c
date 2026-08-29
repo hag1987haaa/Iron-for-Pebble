@@ -259,7 +259,7 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             int lbl_w = 42;
             int lbl_x = active_w - lbl_w;
             int lbl_h = 16;
-            graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
             graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
         }
     } else if (graph_id == 4) { // CADENCE
@@ -313,7 +313,7 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             int lbl_w = 28;
             int lbl_x = active_w - lbl_w;
             int lbl_h = 16;
-            graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
             graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
         }
     } else if (graph_id == 5) { // CALORIES
@@ -334,7 +334,7 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             int lbl_w = 48;
             int lbl_x = active_w - lbl_w;
             int lbl_h = 16;
-            graphics_draw_text(ctx, graph_data_get_max_label(), fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - mah - 2, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            graphics_draw_text(ctx, graph_data_get_max_label(), fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
         }
     }
 }
