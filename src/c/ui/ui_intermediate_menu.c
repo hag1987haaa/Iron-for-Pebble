@@ -1,11 +1,22 @@
-#include "ui_intermediate_menu.h"
-
-#if defined(PBL_COLOR)
+﻿#include "ui_intermediate_menu.h"
 
 static Layer *s_intermediate_layer = NULL;
 static bool s_is_intermediate_menu = false;
 static int s_intermediate_idx = 0; 
 static GColor s_current_bg, s_current_fg;
+
+#if defined(PBL_COLOR)
+#define INTERMEDIATE_MENU_COUNT 2
+static const char* const s_menu_labels[INTERMEDIATE_MENU_COUNT] = {
+    "Activity Type",
+    "Custom Color"
+};
+#else
+#define INTERMEDIATE_MENU_COUNT 1
+static const char* const s_menu_labels[INTERMEDIATE_MENU_COUNT] = {
+    "Activity Type"
+};
+#endif
 
 static void intermediate_update_proc(Layer *layer, GContext *ctx) {
     if (!s_is_intermediate_menu) return;
@@ -13,14 +24,15 @@ static void intermediate_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_fill_color(ctx, s_current_bg);
     graphics_fill_rect(ctx, b, 0, GCornerNone);
     
-    int text_h = 18;
+    int text_h = 16;
     graphics_context_set_text_color(ctx, s_current_fg);
     graphics_draw_text(ctx, "SETTINGS", fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(0, 0, b.size.w, text_h), 0, GTextAlignmentCenter, NULL);
     
-    int item_h = 28;
-    int oy = text_h + 10;
+    int item_h = 24;
+    int spacing = 4;
+    int oy = text_h + 4;
     
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < INTERMEDIATE_MENU_COUNT; i++) {
         if (s_intermediate_idx == i) {
             graphics_context_set_fill_color(ctx, s_current_fg);
             graphics_fill_rect(ctx, GRect(5, oy, b.size.w - 10, item_h + 2), 4, GCornersAll);
@@ -28,9 +40,8 @@ static void intermediate_update_proc(Layer *layer, GContext *ctx) {
         } else {
             graphics_context_set_text_color(ctx, s_current_fg);
         }
-        const char *label = (i == 0) ? "Activity Type" : "Custom Color";
-        graphics_draw_text(ctx, label, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD), GRect(0, oy + 2, b.size.w, item_h), 0, GTextAlignmentCenter, NULL);
-        oy += item_h + 10;
+        graphics_draw_text(ctx, s_menu_labels[i], fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD), GRect(0, oy + 1, b.size.w, item_h), 0, GTextAlignmentCenter, NULL);
+        oy += item_h + spacing;
     }
 }
 
@@ -69,15 +80,20 @@ void ui_intermediate_menu_destroy(void) {
 
 bool ui_intermediate_menu_is_active(void) { return s_is_intermediate_menu; }
 
+void ui_intermediate_menu_handle_up(void) {
+    s_intermediate_idx = (s_intermediate_idx - 1 + INTERMEDIATE_MENU_COUNT) % INTERMEDIATE_MENU_COUNT;
+    if (s_intermediate_layer) layer_mark_dirty(s_intermediate_layer);
+}
+
 void ui_intermediate_menu_handle_down(void) {
-    s_intermediate_idx = (s_intermediate_idx + 1) % 2;
+    s_intermediate_idx = (s_intermediate_idx + 1) % INTERMEDIATE_MENU_COUNT;
     if (s_intermediate_layer) layer_mark_dirty(s_intermediate_layer);
 }
 
 int ui_intermediate_menu_get_selected_idx(void) { return s_intermediate_idx; }
 
 void ui_intermediate_menu_set_selected_idx(int idx) {
-    s_intermediate_idx = (idx % 2 + 2) % 2;
+    s_intermediate_idx = (idx % INTERMEDIATE_MENU_COUNT + INTERMEDIATE_MENU_COUNT) % INTERMEDIATE_MENU_COUNT;
     if (s_intermediate_layer) layer_mark_dirty(s_intermediate_layer);
 }
 
@@ -86,5 +102,3 @@ void ui_intermediate_menu_update_colors(GColor main_bg, GColor main_fg) {
     s_current_fg = main_fg;
     if (s_intermediate_layer) layer_mark_dirty(s_intermediate_layer);
 }
-
-#endif

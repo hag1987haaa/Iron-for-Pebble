@@ -6,10 +6,15 @@ static int s_graph_count = 0, s_graph_id = 0, s_graph_scale = 1;
 static MidPageData s_mid_pages[MAX_MID_PAGES];
 static int s_mid_page_count = 0;
 static int s_current_mid_mode = 0;
+static int s_target_mid_id = -1;
 
 static LowerPageData s_lower_pages[MAX_LOWER_PAGES];
 static int s_lower_page_count = 0;
 static int s_current_lower_mode = 0;
+static int s_target_lower_id = -1;
+static bool s_is_id_protocol_active = false;
+static time_t s_last_user_mid_time = 0;
+static time_t s_last_user_lower_time = 0;
 
 static char s_graph_y_label[16] = "";
 static char s_graph_x_label[16] = "";
@@ -39,6 +44,8 @@ void graph_data_load_from_persist(ActivityType *out_activity, int *out_color_idx
     if (persist_exists(PK_GRAPH_DATA)) persist_read_data(PK_GRAPH_DATA, s_graph_data, sizeof(s_graph_data));
     if (persist_exists(PK_GRAPH_ID)) s_graph_id = persist_read_int(PK_GRAPH_ID);
     if (persist_exists(PK_GRAPH_SCALE)) s_graph_scale = persist_read_int(PK_GRAPH_SCALE);
+    if (persist_exists(PK_LAST_MID_ID)) s_target_mid_id = persist_read_int(PK_LAST_MID_ID);
+    if (persist_exists(PK_LAST_LOWER_ID)) s_target_lower_id = persist_read_int(PK_LAST_LOWER_ID);
     if (out_activity) {
         if (persist_exists(PK_ACTIVITY_TYPE)) {
             *out_activity = (ActivityType)persist_read_int(PK_ACTIVITY_TYPE);
@@ -106,6 +113,7 @@ void graph_data_parse_mid(const char *input) {
 
         // 新形式: [ID],[NAME],[VAL],[UNIT] または 旧形式: [NAME],[VAL],[UNIT],[ICON_ID]
         if (app_is_numeric_string(token1)) {
+            s_is_id_protocol_active = true;
             page->id = atoi(token1);
             app_extract_token(&p, page->name, sizeof(page->name));
             app_extract_token(&p, page->value, sizeof(page->value));
@@ -143,6 +151,7 @@ void graph_data_parse_lower(const char *input) {
         app_extract_token(&p, token1, sizeof(token1));
 
         if (app_is_numeric_string(token1)) {
+            s_is_id_protocol_active = true;
             page->id = atoi(token1);
             app_extract_token(&p, page->name, sizeof(page->name));
             app_extract_token(&p, page->value, sizeof(page->value));
@@ -192,9 +201,22 @@ const char* graph_data_get_min_label(void) { return s_graph_min_label; }
 // 中段データアクセサ
 int graph_data_get_mid_page_count(void) { return s_mid_page_count; }
 int graph_data_get_current_mid_mode(void) { return s_current_mid_mode; }
-void graph_data_set_current_mid_mode(int mode) { s_current_mid_mode = mode; }
+void graph_data_set_current_mid_mode(int mode) { 
+    s_current_mid_mode = mode; 
+    s_last_user_mid_time = time(NULL);
+    if (mode >= 0 && mode < s_mid_page_count) {
+        s_target_mid_id = s_mid_pages[mode].id;
+        persist_write_int(PK_LAST_MID_ID, s_target_mid_id);
+    }
+}
 
 bool graph_data_select_mid_by_id(int id) {
+    // ユーザー操作から2秒以内ならスマホからの古いエコーバックを無視
+    if (time(NULL) - s_last_user_mid_time < 2) {
+        return false;
+    }
+    s_target_mid_id = id;
+    persist_write_int(PK_LAST_MID_ID, id);
     for (int i = 0; i < s_mid_page_count; i++) {
         if (s_mid_pages[i].id == id) {
             s_current_mid_mode = i;
@@ -219,9 +241,22 @@ const MidPageData* graph_data_get_current_mid_page(void) {
 // 下段データアクセサ
 int graph_data_get_lower_page_count(void) { return s_lower_page_count; }
 int graph_data_get_current_lower_mode(void) { return s_current_lower_mode; }
-void graph_data_set_current_lower_mode(int mode) { s_current_lower_mode = mode; }
+void graph_data_set_current_lower_mode(int mode) { 
+    s_current_lower_mode = mode; 
+    s_last_user_lower_time = time(NULL);
+    if (mode >= 0 && mode < s_lower_page_count) {
+        s_target_lower_id = s_lower_pages[mode].id;
+        persist_write_int(PK_LAST_LOWER_ID, s_target_lower_id);
+    }
+}
 
 bool graph_data_select_lower_by_id(int id) {
+    // ユーザー操作から2秒以内ならスマホからの古いエコーバックを無視
+    if (time(NULL) - s_last_user_lower_time < 2) {
+        return false;
+    }
+    s_target_lower_id = id;
+    persist_write_int(PK_LAST_LOWER_ID, id);
     for (int i = 0; i < s_lower_page_count; i++) {
         if (s_lower_pages[i].id == id) {
             s_current_lower_mode = i;
@@ -250,4 +285,8 @@ bool graph_data_is_lower_graph_mode(void) {
     if (!page) return true;
     // IDが100以上、または項目名が"GRAPH"の場合はグラフ表示
     return (page->id >= 100 || strcmp(page->name, "GRAPH") == 0);
+}
+
+bool graph_data_is_id_protocol_active(void) {
+    return s_is_id_protocol_active;
 }

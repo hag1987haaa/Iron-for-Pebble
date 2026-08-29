@@ -1,3 +1,4 @@
+﻿#include "../ui/ui_map.h"
 #include "comm_service.h"
 
 static CommServiceUIUpdateCallback s_ui_update_cb = NULL;
@@ -18,6 +19,10 @@ static bool *s_is_long_workout_ptr = NULL;
 static ActivityType *s_current_activity_ptr = NULL;
 static bool s_has_hr_sensor = false;
 static int32_t s_hr_interval_setting = 0;
+static bool s_map_open_requested = false;
+
+bool comm_service_is_map_open_requested(void) { return s_map_open_requested; }
+void comm_service_clear_map_open_request(void) { s_map_open_requested = false; }
 
 void comm_service_set_ui_buffers(
     char *time_hour_buf, char *time_min_buf, char *time_sec_buf,
@@ -55,6 +60,14 @@ void comm_service_send_button_event(AppEventID event_id, int legacy_cmd) {
 
 void comm_service_send_cmd(int val) {
     comm_service_send_button_event(EVENT_NONE, val);
+}
+
+void comm_service_send_map_state(int state) {
+    DictionaryIterator *iter;
+    if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
+        dict_write_int32(iter, MESSAGE_KEY_MAP_STATE, state);
+        app_message_outbox_send();
+    }
 }
 
 void comm_service_send_activity_type(ActivityType type) {
@@ -116,7 +129,15 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     bool should_update_ui = false;
 
     while (t != NULL) {
-        if (t->key == MESSAGE_KEY_STATE && s_app_state_ptr) {
+        if (t->key == MESSAGE_KEY_CMD) {
+            int cmd = (int)app_get_int_from_tuple(t);
+            if (cmd == 10) {
+                vibes_long_pulse();
+            } else if (cmd == 11) {
+                vibes_double_pulse();
+            }
+        }
+        else if (t->key == MESSAGE_KEY_STATE && s_app_state_ptr) {
             uint8_t new_state = (uint8_t)app_get_int_from_tuple(t);
             if (*s_app_state_ptr != new_state) {
                 *s_app_state_ptr = new_state;
@@ -201,6 +222,25 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             if(received_type >= 0 && received_type < ACTIVITY_COUNT) {
                 *s_current_activity_ptr = (ActivityType)received_type;
                 persist_write_int(PK_ACTIVITY_TYPE, *s_current_activity_ptr);
+                should_update_ui = true;
+            }
+        }
+        else if (t->key == MESSAGE_KEY_MAP_DATA) {
+            Tuple *t_idx = dict_find(iterator, MESSAGE_KEY_MAP_CHUNK_IDX);
+            Tuple *t_total = dict_find(iterator, MESSAGE_KEY_MAP_TOTAL_CHUNKS);
+            int c_idx = t_idx ? (int)app_get_int_from_tuple(t_idx) : 0;
+            int c_total = t_total ? (int)app_get_int_from_tuple(t_total) : 1;
+            ui_map_update_data(t->value->data, t->length, c_idx, c_total);
+            should_update_ui = true;
+        }
+        else if (t->key == MESSAGE_KEY_MAP_STATE) {
+            int map_state = (int)app_get_int_from_tuple(t);
+            if (map_state == 1 && !ui_map_is_active()) {
+                s_map_open_requested = true;
+                should_update_ui = true;
+            } else if (map_state == 0 && ui_map_is_active()) {
+                s_map_open_requested = false;
+                ui_map_destroy();
                 should_update_ui = true;
             }
         }

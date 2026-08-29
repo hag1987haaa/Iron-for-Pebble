@@ -36,3 +36,5 @@ bool graph_data_select_lower_by_id(int id);
 const LowerPageData* graph_data_get_lower_page(int index);
 const LowerPageData* graph_data_get_current_lower_page(void);
 bool graph_data_is_lower_graph_mode(void);
+
+bool graph_data_is_id_protocol_active(void);

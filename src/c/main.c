@@ -1,10 +1,11 @@
-#include <pebble.h>
+﻿#include <pebble.h>
 #include "app_state.h"
 #include "comm/graph_data.h"
 #include "comm/comm_service.h"
 #include "ui/ui_color_picker.h"
 #include "ui/ui_intermediate_menu.h"
 #include "ui/ui_activity_picker.h"
+#include "ui/ui_map.h"
 #include "ui/ui_marquee.h"
 #include "ui/ui_graph_layer.h"
 
@@ -174,7 +175,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
         return;
     }
     if (ui_intermediate_menu_is_active() && s_action_bar) {
-        ui_intermediate_menu_handle_down();
+        ui_intermediate_menu_handle_up();
         return;
     }
 #endif
@@ -194,6 +195,21 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+    if (ui_map_is_active()) {
+        // マップ表示中のSELECT短押し: 中段連動データを切り替え
+        int mid_count = graph_data_get_mid_page_count();
+        if (mid_count > 0) {
+            int current_mode = graph_data_get_current_mid_mode();
+            current_mode = (current_mode + 1) % mid_count;
+            graph_data_set_current_mid_mode(current_mode);
+            const MidPageData *page = graph_data_get_current_mid_page();
+            if (page) comm_service_send_mid_id(page->id);
+            ui_map_mark_dirty();
+        }
+        comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK, 0);
+        vibes_short_pulse();
+        return;
+    }
 #if defined(PBL_COLOR)
     if (ui_color_picker_is_active() && s_action_bar) {
         s_selected_color_idx = ui_color_picker_get_selected_idx();
@@ -229,11 +245,17 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_intermediate_menu_is_active() && s_action_bar) {
         int chosen = ui_intermediate_menu_get_selected_idx();
         ui_intermediate_menu_destroy();
+#if defined(PBL_COLOR)
         if (chosen == 0) {
             ui_activity_picker_create(s_main_window, s_action_bar, s_current_activity, s_current_main_bg, s_current_main_fg);
-        } else {
+        } else if (chosen == 1) {
             ui_color_picker_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
         }
+#else
+        if (chosen == 0) {
+            ui_activity_picker_create(s_main_window, s_action_bar, s_current_activity, s_current_main_bg, s_current_main_fg);
+        }
+#endif
         if (s_action_bar && s_main_window) {
             action_bar_layer_remove_from_window(s_action_bar);
             action_bar_layer_add_to_window(s_action_bar, s_main_window);
@@ -252,10 +274,13 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
             current_mode = (current_mode + 1) % mid_count;
             graph_data_set_current_mid_mode(current_mode);
             
-            // 新規: 選択した中段項目のIDをスマホへ通知
             const MidPageData *page = graph_data_get_current_mid_page();
             if (page) {
                 comm_service_send_mid_id(page->id);
+                // 古いAndroidアプリ互換用（IDプロトコル未検知時のみCMD送信）
+                if (!graph_data_is_id_protocol_active()) {
+                    comm_service_send_cmd(2);
+                }
             }
 
             update_ui_state();
@@ -288,6 +313,11 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
+    if (ui_map_is_active()) {
+        comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK, 0);
+        vibes_short_pulse();
+        return;
+    }
 #if defined(PBL_COLOR)
     if (ui_color_picker_is_active() && s_action_bar) {
         ui_color_picker_handle_down();
@@ -316,8 +346,8 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
             const LowerPageData *page = graph_data_get_current_lower_page();
             if (page) {
                 comm_service_send_lower_id(page->id);
-                // グラフ項目の場合は互換のためCMD:6も送信
-                if (page->id >= 100) {
+                // 古いAndroidアプリ互換用（IDプロトコル未検知時のみCMD送信）
+                if (!graph_data_is_id_protocol_active()) {
                     comm_service_send_cmd(6);
                 }
             }
@@ -367,6 +397,16 @@ static void up_long_click_release_handler(ClickRecognizerRef recognizer, void *c
 }
 
 static void select_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
+    if (ui_map_is_active()) {
+        trigger_ignore_single_click();
+        if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
+        
+        // マップ表示中のSELECT長押し: 現在地センタリング・リセット
+        comm_service_send_button_event(EVENT_BUTTON_SELECT_LONG, 0);
+        ui_marquee_trigger_custom("MAP RE-CENTER", s_current_main_fg, s_current_main_bg, s_app_state);
+        vibes_short_pulse();
+        return;
+    }
     bool ignore = ui_activity_picker_is_active();
 #if defined(PBL_COLOR)
     ignore = ignore || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
@@ -397,6 +437,19 @@ static void down_long_click_release_handler(ClickRecognizerRef recognizer, void 
 }
 
 static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
+    if (ui_map_is_active()) {
+        ui_map_destroy();
+        comm_service_send_map_state(0);
+        if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, false);
+        if (s_graph_layer) layer_set_hidden(s_graph_layer, false);
+        if (s_action_bar && s_main_window) {
+            action_bar_layer_remove_from_window(s_action_bar);
+            action_bar_layer_add_to_window(s_action_bar, s_main_window);
+        }
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
 #if defined(PBL_COLOR)
     if (ui_color_picker_is_active() && s_action_bar) {
         ui_color_picker_set_selected_idx(s_selected_color_idx);
@@ -458,6 +511,14 @@ static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void click_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_BACK, back_click_handler);
+
+    if (ui_map_is_active()) {
+        window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+        window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+        window_long_click_subscribe(BUTTON_ID_SELECT, 800, generic_long_click_down_handler, select_long_click_release_handler);
+        window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+        return;
+    }
 
     bool custom_clicks = ui_activity_picker_is_active();
 #if defined(PBL_COLOR)
@@ -531,35 +592,49 @@ static void update_ui_state(void) {
     }
 #endif
 
+    if (comm_service_is_map_open_requested() && !ui_map_is_active() && s_main_window) {
+        comm_service_clear_map_open_request();
+        ui_map_create(s_main_window, s_current_main_bg, s_current_main_fg);
+    }
+
     if (s_main_window) {
         window_set_background_color(s_main_window, s_current_main_bg);
     }
     
-    bool hide = false;
-    bool hide_cond = ui_activity_picker_is_active();
+    bool hide_pickers = ui_activity_picker_is_active() || 
+                        ui_intermediate_menu_is_active() || 
+                        ui_map_is_active();
 #if defined(PBL_COLOR)
-    hide_cond = hide_cond || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
+    hide_pickers = hide_pickers || ui_color_picker_is_active();
 #endif
-    if (s_action_bar && hide_cond) hide = true;
 
-    bool hide_mid = hide || !graph_data_is_detail_mode(s_app_state);
+    // 中段コックピット背景・グラフ・ActionBarの完全非表示制御
+    if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, hide_pickers);
+    if (s_graph_layer) layer_set_hidden(s_graph_layer, hide_pickers);
+    // ActionBar is always kept visible with transparent background in map mode
 
+    // 中段テキストレイヤーの表示制御
+    bool hide_mid = hide_pickers || !graph_data_is_detail_mode(s_app_state);
     if (s_dist_layer) layer_set_hidden(text_layer_get_layer(s_dist_layer), hide_mid);
     if (s_step_layer) layer_set_hidden(text_layer_get_layer(s_step_layer), hide_mid);
-    
     if (!s_has_hr_sensor) {
         if (s_hr_layer) layer_set_hidden(text_layer_get_layer(s_hr_layer), true);
     } else {
         if (s_hr_layer) layer_set_hidden(text_layer_get_layer(s_hr_layer), hide_mid);
     }
-    
     if (s_clock_layer) layer_set_hidden(text_layer_get_layer(s_clock_layer), hide_mid);
 
-    if ((s_app_state < 3 || s_app_state >= 5) && !hide) {
+    if ((s_app_state < 3 || s_app_state >= 5) && !hide_pickers) {
         ui_marquee_trigger(s_app_state, s_current_main_fg, s_current_main_bg);
     } else {
         ui_marquee_destroy();
     }
+
+    // 上段時間数字レイヤーの表示制御（マップ表示中は完全に隠す）
+    bool hide_time = ui_map_is_active();
+    if (s_time_min_layer) layer_set_hidden(text_layer_get_layer(s_time_min_layer), hide_time);
+    if (s_time_colon2_layer) layer_set_hidden(text_layer_get_layer(s_time_colon2_layer), hide_time);
+    if (s_time_sec_layer) layer_set_hidden(text_layer_get_layer(s_time_sec_layer), hide_time);
 
     if (s_is_long_workout) {
 #if !defined(PBL_PLATFORM_APLITE)
@@ -588,8 +663,8 @@ static void update_ui_state(void) {
         layer_set_frame(text_layer_get_layer(s_time_sec_layer), s_rect_sec_3);
     }
     
-    if (s_time_hour_layer) layer_set_hidden(text_layer_get_layer(s_time_hour_layer), !s_is_long_workout);
-    if (s_time_colon1_layer) layer_set_hidden(text_layer_get_layer(s_time_colon1_layer), !s_is_long_workout);
+    if (s_time_hour_layer) layer_set_hidden(text_layer_get_layer(s_time_hour_layer), !s_is_long_workout || hide_time);
+    if (s_time_colon1_layer) layer_set_hidden(text_layer_get_layer(s_time_colon1_layer), !s_is_long_workout || hide_time);
     
     if (s_time_hour_layer) text_layer_set_text_color(s_time_hour_layer, s_current_main_fg);
     if (s_time_colon1_layer) text_layer_set_text_color(s_time_colon1_layer, s_current_main_fg);
@@ -604,48 +679,57 @@ static void update_ui_state(void) {
     if (s_step_layer) text_layer_set_text_color(s_step_layer, mid_text_color);
 
     if (s_action_bar) {
-        action_bar_layer_set_background_color(s_action_bar, pc);
-        
-        bool use_black_icons = gcolor_equal(gcolor_legible_over(pc), GColorBlack);
-        load_action_icons(use_black_icons);
-        
-        bool icon_cond = ui_activity_picker_is_active();
-#if defined(PBL_COLOR)
-        icon_cond = icon_cond || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
-#endif
-        if (icon_cond) {
+        if (ui_map_is_active()) {
+            // マップ表示中：背景を完全に透明（GColorClear）にし、スッキリした黒アイコンをボタン真正面に表示
+            action_bar_layer_set_background_color(s_action_bar, GColorClear);
+            load_action_icons(true); // 黒アイコン読み込み
             action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_up);
-#if defined(PBL_COLOR)
-            if (ui_intermediate_menu_is_active()) {
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_check);
-            } else {
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_save);
-            }
-#else
-            action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_save);
-#endif
+            action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_graph);
             action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_down);
         } else {
-            if (s_app_state < 3) {
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_play);
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_setting);
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_graph);
-            } else if (s_app_state == 3) { 
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_pause);
-                action_bar_layer_clear_icon(s_action_bar, BUTTON_ID_SELECT);
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_graph);
-            } else if (s_app_state == 4) { 
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_play);
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_stop);
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_graph);
-            } else if (s_app_state == 5) { 
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_save);
-                action_bar_layer_clear_icon(s_action_bar, BUTTON_ID_SELECT);
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_trash);
-            } else if (s_app_state == 6) { 
-                action_bar_layer_clear_icon(s_action_bar, BUTTON_ID_UP);
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_check);
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_graph);
+            action_bar_layer_set_background_color(s_action_bar, pc);
+            
+            bool use_black_icons = gcolor_equal(gcolor_legible_over(pc), GColorBlack);
+            load_action_icons(use_black_icons);
+            
+            bool icon_cond = ui_activity_picker_is_active();
+#if defined(PBL_COLOR)
+            icon_cond = icon_cond || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
+#endif
+            if (icon_cond) {
+                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_up);
+#if defined(PBL_COLOR)
+                if (ui_intermediate_menu_is_active()) {
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_check);
+                } else {
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_save);
+                }
+#else
+                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_save);
+#endif
+                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_down);
+            } else {
+                if (s_app_state < 3) {
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_play);
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_setting);
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_graph);
+                } else if (s_app_state == 3) { 
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_pause);
+                    action_bar_layer_clear_icon(s_action_bar, BUTTON_ID_SELECT);
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_graph);
+                } else if (s_app_state == 4) { 
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_play);
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_stop);
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_graph);
+                } else if (s_app_state == 5) { 
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_save);
+                    action_bar_layer_clear_icon(s_action_bar, BUTTON_ID_SELECT);
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_trash);
+                } else if (s_app_state == 6) { 
+                    action_bar_layer_clear_icon(s_action_bar, BUTTON_ID_UP);
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_check);
+                    action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_graph);
+                }
             }
         }
     }
@@ -657,7 +741,7 @@ static void update_ui_state(void) {
             layer_insert_below_sibling(s_mid_bg_layer, action_bar_layer_get_layer(s_action_bar));
         }
         
-        if (s_graph_layer) layer_insert_above_sibling(s_graph_layer, s_mid_bg_layer);
+        if (s_graph_layer) layer_insert_above_sibling(s_graph_layer, action_bar_layer_get_layer(s_action_bar));
         if (s_time_hour_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_hour_layer), s_mid_bg_layer);
         if (s_time_colon1_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_colon1_layer), s_mid_bg_layer);
         if (s_time_min_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_min_layer), s_mid_bg_layer);
@@ -689,6 +773,9 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         strcpy(last_clock_buf, s_clock_buf);
         if (s_clock_layer) {
             text_layer_set_text(s_clock_layer, s_clock_buf);
+        }
+        if (ui_map_is_active()) {
+            ui_map_mark_dirty();
         }
     }
     
@@ -1049,7 +1136,7 @@ static void main_window_load(Window *window) {
     row1_y = upper_h + 5; row2_y = upper_h + 33;
 #endif
 
-    s_graph_layer = layer_create(GRect(0, upper_h + mid_h, active_w, lower_h));
+    s_graph_layer = layer_create(GRect(0, upper_h + mid_h, wt, lower_h));
     layer_set_update_proc(s_graph_layer, graph_layer_update_callback);
     layer_add_child(wl, s_graph_layer);
 
@@ -1172,6 +1259,8 @@ static void main_window_load(Window *window) {
 #if defined(PBL_COLOR)
     ui_color_picker_set_selected_idx(s_selected_color_idx);
 #endif
+
+    ui_map_init_buffers(s_clock_buf, s_time_hour_buf, s_time_min_buf, s_time_sec_buf, &s_is_long_workout);
 
     comm_service_set_ui_buffers(
         s_time_hour_buf, s_time_min_buf, s_time_sec_buf,

@@ -31,7 +31,11 @@
         "MID_ID": 10015,
         "LOWER_ID": 10016,
         "LOWER_DATA": 10017,
-        "KEY_EVENT": 10018
+        "KEY_EVENT": 10018,
+        "MAP_DATA": 10019,
+        "MAP_CHUNK_IDX": 10020,
+        "MAP_TOTAL_CHUNKS": 10021,
+        "MAP_STATE": 10022
     },
     "projectType": "native",
     "resources": {
@@ -182,7 +186,7 @@
     "name": "iron",
     "shortName": "Iron",
     "longName": "Iron",
-    "versionLabel": "1.3.0",
+    "versionLabel": "1.3.1",
     "companyName": "1987haaa",
     "appKeys": {
         "CMD": 10000,
@@ -201,6 +205,10 @@
         "MID_ID": 10015,
         "LOWER_ID": 10016,
         "LOWER_DATA": 10017,
-        "KEY_EVENT": 10018
+        "KEY_EVENT": 10018,
+        "MAP_DATA": 10019,
+        "MAP_CHUNK_IDX": 10020,
+        "MAP_TOTAL_CHUNKS": 10021,
+        "MAP_STATE": 10022
     }
 }
