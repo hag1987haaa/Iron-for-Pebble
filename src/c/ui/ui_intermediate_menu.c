@@ -1,4 +1,5 @@
-﻿#include "ui_intermediate_menu.h"
+#include "ui_intermediate_menu.h"
+#include "../app_state.h"
 
 static Layer *s_intermediate_layer = NULL;
 static bool s_is_intermediate_menu = false;
@@ -43,6 +44,10 @@ static void intermediate_update_proc(Layer *layer, GContext *ctx) {
         graphics_draw_text(ctx, s_menu_labels[i], fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD), GRect(0, oy + 1, b.size.w, item_h), 0, GTextAlignmentCenter, NULL);
         oy += item_h + spacing;
     }
+
+    // 一番下段中央にバージョン表示
+    graphics_context_set_text_color(ctx, s_current_fg);
+    graphics_draw_text(ctx, APP_VERSION_STR, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, b.size.h - 16, b.size.w, 14), 0, GTextAlignmentCenter, NULL);
 }
 
 void ui_intermediate_menu_create(Window *window, ActionBarLayer *action_bar, GColor main_bg, GColor main_fg) {

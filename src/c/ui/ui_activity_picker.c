@@ -34,9 +34,6 @@ static void activity_picker_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_text_color(ctx, s_current_fg);
     graphics_draw_text(ctx, ACTIVITY_NAMES[next_idx], fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(0, oy, b.size.w, item_h), 0, GTextAlignmentCenter, NULL);
 
-    // 一番下段中央にバージョン表示
-    graphics_context_set_text_color(ctx, s_current_fg);
-    graphics_draw_text(ctx, APP_VERSION_STR, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, b.size.h - 15, b.size.w, 14), 0, GTextAlignmentCenter, NULL);
 }
 
 void ui_activity_picker_create(Window *window, ActionBarLayer *action_bar, ActivityType initial_type, GColor main_bg, GColor main_fg) {
