@@ -134,8 +134,20 @@ void graph_data_parse_mid(const char *input) {
         }
         s_mid_page_count++;
     }
-    if (s_mid_page_count == 0 || s_current_mid_mode >= s_mid_page_count) {
-        s_current_mid_mode = 0;
+    bool found_target = false;
+    if (s_target_mid_id != -1) {
+        for (int i = 0; i < s_mid_page_count; i++) {
+            if (s_mid_pages[i].id == s_target_mid_id) {
+                s_current_mid_mode = i;
+                found_target = true;
+                break;
+            }
+        }
+    }
+    if (!found_target) {
+        if (s_mid_page_count == 0 || s_current_mid_mode >= s_mid_page_count) {
+            s_current_mid_mode = 0;
+        }
     }
 }
 
@@ -168,8 +180,20 @@ void graph_data_parse_lower(const char *input) {
         }
         s_lower_page_count++;
     }
-    if (s_lower_page_count == 0 || s_current_lower_mode >= s_lower_page_count) {
-        s_current_lower_mode = 0;
+    bool found_lower_target = false;
+    if (s_target_lower_id != -1) {
+        for (int i = 0; i < s_lower_page_count; i++) {
+            if (s_lower_pages[i].id == s_target_lower_id) {
+                s_current_lower_mode = i;
+                found_lower_target = true;
+                break;
+            }
+        }
+    }
+    if (!found_lower_target) {
+        if (s_lower_page_count == 0 || s_current_lower_mode >= s_lower_page_count) {
+            s_current_lower_mode = 0;
+        }
     }
 }
 
