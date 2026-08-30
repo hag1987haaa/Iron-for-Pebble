@@ -1458,7 +1458,7 @@ LOAD /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../li
  .note.gnu.build-id
                 0x00000084       0x24 linker stubs
 
-.text           0x000000a8     0x47f7
+.text           0x000000a8     0x4828
  *(.text)
  .text          0x000000a8       0x14 /home/naokiiwaoka/.pebble-sdk/SDKs/current/sdk-core/pebble/aplite/lib/libpebble.a(tmp7jpKUopebble.o)
  *(.text.*)
@@ -1970,391 +1970,391 @@ LOAD /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../li
  *(.rodata)
  *(.rodata*)
  .rodata.str1.1
-                0x000046d0      0x1cf src/c/app_state.c.57.o
+                0x000046d0      0x200 src/c/app_state.c.57.o
                                  0x35 (size before relaxing)
  .rodata.inbox_received_callback.str1.1
-                0x0000489f        0xd src/c/comm/comm_service.c.57.o
+                0x000048d0        0xd src/c/comm/comm_service.c.57.o
  .rodata.graph_data_parse_mid.str1.1
-                0x0000489f        0xa src/c/comm/graph_data.c.57.o
+                0x000048d0        0xa src/c/comm/graph_data.c.57.o
  .rodata.graph_data_is_lower_graph_mode.str1.1
-                0x0000489f        0x6 src/c/comm/graph_data.c.57.o
+                0x000048d0        0x6 src/c/comm/graph_data.c.57.o
  .rodata.select_long_click_release_handler.str1.1
-                0x0000489f       0x1f src/c/main.c.57.o
+                0x000048d0       0x1f src/c/main.c.57.o
  .rodata.tick_handler.str1.1
-                0x0000489f        0x8 src/c/main.c.57.o
+                0x000048d0        0x8 src/c/main.c.57.o
  .rodata.main_window_load.str1.1
-                0x0000489f       0x59 src/c/main.c.57.o
+                0x000048d0       0x59 src/c/main.c.57.o
  .rodata.down_long_click_release_handler.str1.1
-                0x0000489f        0xf src/c/main.c.57.o
+                0x000048d0        0xf src/c/main.c.57.o
  .rodata.up_long_click_release_handler.str1.1
-                0x0000489f        0xd src/c/main.c.57.o
+                0x000048d0        0xd src/c/main.c.57.o
  .rodata.activity_picker_update_proc.str1.1
-                0x0000489f       0x5a src/c/ui/ui_activity_picker.c.57.o
+                0x000048d0       0x5a src/c/ui/ui_activity_picker.c.57.o
  .rodata.ui_metric_render_page.str1.1
-                0x0000489f       0x3c src/c/ui/ui_graph_layer.c.57.o
+                0x000048d0       0x3c src/c/ui/ui_graph_layer.c.57.o
  .rodata.ui_graph_layer_update_proc.str1.1
-                0x0000489f       0x1d src/c/ui/ui_graph_layer.c.57.o
+                0x000048d0       0x1d src/c/ui/ui_graph_layer.c.57.o
  .rodata.map_update_proc.str1.1
-                0x0000489f       0x72 src/c/ui/ui_map.c.57.o
+                0x000048d0       0x72 src/c/ui/ui_map.c.57.o
  .rodata.create_marquee_layers.str1.1
-                0x0000489f       0x1b src/c/ui/ui_marquee.c.57.o
+                0x000048d0       0x1b src/c/ui/ui_marquee.c.57.o
  .rodata.ui_marquee_trigger_custom.str1.1
-                0x0000489f        0x3 src/c/ui/ui_marquee.c.57.o
+                0x000048d0        0x3 src/c/ui/ui_marquee.c.57.o
  .rodata.ui_marquee_trigger.str1.1
-                0x0000489f       0x8d src/c/ui/ui_marquee.c.57.o
+                0x000048d0       0x8d src/c/ui/ui_marquee.c.57.o
 
-.glue_7         0x000048a0        0x0
- .glue_7        0x000048a0        0x0 linker stubs
+.glue_7         0x000048d0        0x0
+ .glue_7        0x000048d0        0x0 linker stubs
 
-.glue_7t        0x000048a0        0x0
- .glue_7t       0x000048a0        0x0 linker stubs
+.glue_7t        0x000048d0        0x0
+ .glue_7t       0x000048d0        0x0 linker stubs
 
-.vfp11_veneer   0x000048a0        0x0
- .vfp11_veneer  0x000048a0        0x0 linker stubs
+.vfp11_veneer   0x000048d0        0x0
+ .vfp11_veneer  0x000048d0        0x0 linker stubs
 
-.v4_bx          0x000048a0        0x0
- .v4_bx         0x000048a0        0x0 linker stubs
+.v4_bx          0x000048d0        0x0
+ .v4_bx         0x000048d0        0x0 linker stubs
 
-.init           0x000048a0        0x4
- .init          0x000048a0        0x4 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crti.o
-                0x000048a0                _init
+.init           0x000048d0        0x4
+ .init          0x000048d0        0x4 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crti.o
+                0x000048d0                _init
 
-.fini           0x000048a4        0x4
- .fini          0x000048a4        0x4 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crti.o
-                0x000048a4                _fini
+.fini           0x000048d4        0x4
+ .fini          0x000048d4        0x4 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crti.o
+                0x000048d4                _fini
 
-.iplt           0x000048a8        0x0
- .iplt          0x000048a8        0x0 src/c/app_state.c.57.o
+.iplt           0x000048d8        0x0
+ .iplt          0x000048d8        0x0 src/c/app_state.c.57.o
 
-.rel.dyn        0x000048a8        0x0
- .rel.iplt      0x000048a8        0x0 src/c/app_state.c.57.o
- .rel.got       0x000048a8        0x0 src/c/app_state.c.57.o
+.rel.dyn        0x000048d8        0x0
+ .rel.iplt      0x000048d8        0x0 src/c/app_state.c.57.o
+ .rel.got       0x000048d8        0x0 src/c/app_state.c.57.o
 
-.data           0x000048a8       0x8c
+.data           0x000048d8       0x8c
  *(.data)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crti.o
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtbegin.o
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/crt0.o
- .data          0x000048a8        0x0 src/c/app_state.c.57.o
- .data          0x000048a8        0x0 src/c/comm/comm_service.c.57.o
- .data          0x000048a8        0x0 src/c/comm/graph_data.c.57.o
- .data          0x000048a8        0x0 src/c/main.c.57.o
- .data          0x000048a8        0x0 src/c/ui/ui_activity_picker.c.57.o
- .data          0x000048a8        0x0 src/c/ui/ui_color_picker.c.57.o
- .data          0x000048a8        0x0 src/c/ui/ui_graph_layer.c.57.o
- .data          0x000048a8        0x0 src/c/ui/ui_intermediate_menu.c.57.o
- .data          0x000048a8        0x0 src/c/ui/ui_map.c.57.o
- .data          0x000048a8        0x0 src/c/ui/ui_marquee.c.57.o
- .data          0x000048a8        0x0 aplite/appinfo.auto.c.57.o
- .data          0x000048a8        0x0 aplite/src/resource_ids.auto.c.57.o
- .data          0x000048a8        0x0 src/message_keys.auto.c.57.o
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/current/sdk-core/pebble/aplite/lib/libpebble.a(tmp7jpKUopebble.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-atexit.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-exit.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-findfp.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-fwalk.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-stdio.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-closer.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-reent.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-impure.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-lseekr.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-readr.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-writer.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-init.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-fini.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-lock.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-__atexit.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-__call_atexit.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-freer.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-mallocr.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-mlock.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-fclose.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-fflush.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-sbrkr.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-sysconf.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-errno.o)
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtend.o
- .data          0x000048a8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtn.o
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crti.o
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtbegin.o
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/crt0.o
+ .data          0x000048d8        0x0 src/c/app_state.c.57.o
+ .data          0x000048d8        0x0 src/c/comm/comm_service.c.57.o
+ .data          0x000048d8        0x0 src/c/comm/graph_data.c.57.o
+ .data          0x000048d8        0x0 src/c/main.c.57.o
+ .data          0x000048d8        0x0 src/c/ui/ui_activity_picker.c.57.o
+ .data          0x000048d8        0x0 src/c/ui/ui_color_picker.c.57.o
+ .data          0x000048d8        0x0 src/c/ui/ui_graph_layer.c.57.o
+ .data          0x000048d8        0x0 src/c/ui/ui_intermediate_menu.c.57.o
+ .data          0x000048d8        0x0 src/c/ui/ui_map.c.57.o
+ .data          0x000048d8        0x0 src/c/ui/ui_marquee.c.57.o
+ .data          0x000048d8        0x0 aplite/appinfo.auto.c.57.o
+ .data          0x000048d8        0x0 aplite/src/resource_ids.auto.c.57.o
+ .data          0x000048d8        0x0 src/message_keys.auto.c.57.o
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/current/sdk-core/pebble/aplite/lib/libpebble.a(tmp7jpKUopebble.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-atexit.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-exit.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-findfp.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-fwalk.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-stdio.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-closer.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-reent.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-impure.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-lseekr.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-readr.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-writer.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-init.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-fini.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-lock.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-__atexit.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-__call_atexit.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-freer.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-mallocr.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-mlock.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-fclose.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-fflush.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-sbrkr.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-sysconf.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc.a(libc_a-errno.o)
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtend.o
+ .data          0x000048d8        0x0 /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../lib/gcc/arm-none-eabi/14.2.1/thumb/v7-m/nofp/crtn.o
  *(.data.*)
  .data.rel.ro.local.ACTIVITY_NAMES
-                0x000048a8       0x1c src/c/app_state.c.57.o
-                0x000048a8                ACTIVITY_NAMES
+                0x000048d8       0x1c src/c/app_state.c.57.o
+                0x000048d8                ACTIVITY_NAMES
  .data.s_target_lower_id
-                0x000048c4        0x4 src/c/comm/graph_data.c.57.o
+                0x000048f4        0x4 src/c/comm/graph_data.c.57.o
  .data.s_target_mid_id
-                0x000048c8        0x4 src/c/comm/graph_data.c.57.o
+                0x000048f8        0x4 src/c/comm/graph_data.c.57.o
  .data.s_graph_scale
-                0x000048cc        0x4 src/c/comm/graph_data.c.57.o
+                0x000048fc        0x4 src/c/comm/graph_data.c.57.o
  .data.s_selected_color_idx
-                0x000048d0        0x4 src/c/main.c.57.o
+                0x00004900        0x4 src/c/main.c.57.o
  .data.s_is_paused
-                0x000048d4        0x1 src/c/main.c.57.o
+                0x00004904        0x1 src/c/main.c.57.o
  .data.s_step_buf
-                0x000048d5       0x10 src/c/main.c.57.o
- .data.s_hr_buf
-                0x000048e5       0x10 src/c/main.c.57.o
- .data.s_dist_buf
-                0x000048f5       0x10 src/c/main.c.57.o
- .data.s_clock_buf
                 0x00004905       0x10 src/c/main.c.57.o
+ .data.s_hr_buf
+                0x00004915       0x10 src/c/main.c.57.o
+ .data.s_dist_buf
+                0x00004925       0x10 src/c/main.c.57.o
+ .data.s_clock_buf
+                0x00004935       0x10 src/c/main.c.57.o
  .data.s_time_sec_buf
-                0x00004915        0x8 src/c/main.c.57.o
+                0x00004945        0x8 src/c/main.c.57.o
  .data.s_time_min_buf
-                0x0000491d        0x8 src/c/main.c.57.o
+                0x0000494d        0x8 src/c/main.c.57.o
  .data.s_time_hour_buf
-                0x00004925        0x8 src/c/main.c.57.o
- *fill*         0x0000492d        0x3 
+                0x00004955        0x8 src/c/main.c.57.o
+ *fill*         0x0000495d        0x3 
  .data.MESSAGE_KEY_HR
-                0x00004930        0x4 src/message_keys.auto.c.57.o
-                0x00004930                MESSAGE_KEY_HR
+                0x00004960        0x4 src/message_keys.auto.c.57.o
+                0x00004960                MESSAGE_KEY_HR
 
-.igot.plt       0x00004934        0x0
- .igot.plt      0x00004934        0x0 src/c/app_state.c.57.o
+.igot.plt       0x00004964        0x0
+ .igot.plt      0x00004964        0x0 src/c/app_state.c.57.o
 
-.got            0x00004934        0x8
- .got           0x00004934        0x8 src/c/app_state.c.57.o
+.got            0x00004964        0x8
+ .got           0x00004964        0x8 src/c/app_state.c.57.o
 
-.got.plt        0x0000493c        0xc
- .got.plt       0x0000493c        0xc src/c/app_state.c.57.o
-                0x0000493c                _GLOBAL_OFFSET_TABLE_
+.got.plt        0x0000496c        0xc
+ .got.plt       0x0000496c        0xc src/c/app_state.c.57.o
+                0x0000496c                _GLOBAL_OFFSET_TABLE_
 
-.bss            0x00004948      0xfa8
+.bss            0x00004978      0xfa8
  *(.bss)
  *(.bss.*)
  .bss.s_map_open_requested
-                0x00004948        0x1 src/c/comm/comm_service.c.57.o
+                0x00004978        0x1 src/c/comm/comm_service.c.57.o
  .bss.s_has_hr_sensor
-                0x00004949        0x1 src/c/comm/comm_service.c.57.o
- *fill*         0x0000494a        0x2 
+                0x00004979        0x1 src/c/comm/comm_service.c.57.o
+ *fill*         0x0000497a        0x2 
  .bss.s_current_activity_ptr
-                0x0000494c        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_is_long_workout_ptr
-                0x00004950        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_is_paused_ptr
-                0x00004954        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_app_state_ptr
-                0x00004958        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_step_layer
-                0x0000495c        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_hr_layer
-                0x00004960        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_dist_layer
-                0x00004964        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_step_buf
-                0x00004968        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_hr_buf  0x0000496c        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_dist_buf
-                0x00004970        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_time_sec_buf
-                0x00004974        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_time_min_buf
-                0x00004978        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_time_hour_buf
                 0x0000497c        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_graph_dirty_cb
-                0x00004980        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_ui_update_cb
-                0x00004984        0x4 src/c/comm/comm_service.c.57.o
- .bss.s_graph_min_label
-                0x00004988       0x10 src/c/comm/graph_data.c.57.o
- .bss.s_graph_max_label
-                0x00004998       0x10 src/c/comm/graph_data.c.57.o
- .bss.s_graph_x_label
-                0x000049a8       0x10 src/c/comm/graph_data.c.57.o
- .bss.s_graph_y_label
-                0x000049b8       0x10 src/c/comm/graph_data.c.57.o
- .bss.s_last_user_lower_time
-                0x000049c8        0x4 src/c/comm/graph_data.c.57.o
- .bss.s_last_user_mid_time
-                0x000049cc        0x4 src/c/comm/graph_data.c.57.o
- .bss.s_is_id_protocol_active
-                0x000049d0        0x1 src/c/comm/graph_data.c.57.o
- *fill*         0x000049d1        0x3 
- .bss.s_current_lower_mode
-                0x000049d4        0x4 src/c/comm/graph_data.c.57.o
- .bss.s_lower_page_count
-                0x000049d8        0x4 src/c/comm/graph_data.c.57.o
- .bss.s_lower_pages
-                0x000049dc      0x348 src/c/comm/graph_data.c.57.o
- .bss.s_current_mid_mode
-                0x00004d24        0x4 src/c/comm/graph_data.c.57.o
- .bss.s_mid_page_count
-                0x00004d28        0x4 src/c/comm/graph_data.c.57.o
- .bss.s_mid_pages
-                0x00004d2c      0x348 src/c/comm/graph_data.c.57.o
- .bss.s_graph_id
-                0x00005074        0x4 src/c/comm/graph_data.c.57.o
- .bss.s_graph_count
-                0x00005078        0x4 src/c/comm/graph_data.c.57.o
- .bss.s_graph_data
-                0x0000507c       0xb4 src/c/comm/graph_data.c.57.o
- .bss.s_seconds_counter.0
-                0x00005130        0x4 src/c/main.c.57.o
- .bss.last_tick_app_state.1
-                0x00005134        0x1 src/c/main.c.57.o
- *fill*         0x00005135        0x3 
- .bss.state0_demo_timer.2
-                0x00005138        0x4 src/c/main.c.57.o
- .bss.last_clock_buf.3
-                0x0000513c       0x10 src/c/main.c.57.o
- *fill*         0x0000514c        0x4 
- .bss.s_long_click_start_time
-                0x00005150        0x8 src/c/main.c.57.o
- .bss.s_ignore_single_click
-                0x00005158        0x1 src/c/main.c.57.o
- *fill*         0x00005159        0x3 
- .bss.s_ignore_single_click_timer
-                0x0000515c        0x4 src/c/main.c.57.o
- .bss.s_rect_sec_3
-                0x00005160        0x8 src/c/main.c.57.o
- .bss.s_rect_col2_3
-                0x00005168        0x8 src/c/main.c.57.o
- .bss.s_rect_min_3
-                0x00005170        0x8 src/c/main.c.57.o
- .bss.s_rect_sec_5
-                0x00005178        0x8 src/c/main.c.57.o
- .bss.s_rect_col2_5
-                0x00005180        0x8 src/c/main.c.57.o
- .bss.s_rect_min_5
-                0x00005188        0x8 src/c/main.c.57.o
- .bss.s_rect_col1_5
-                0x00005190        0x8 src/c/main.c.57.o
- .bss.s_rect_hour_5
-                0x00005198        0x8 src/c/main.c.57.o
- .bss.s_current_activity
-                0x000051a0        0x1 src/c/main.c.57.o
- .bss.s_has_hr_sensor
-                0x000051a1        0x1 src/c/main.c.57.o
- .bss.s_is_long_workout
-                0x000051a2        0x1 src/c/main.c.57.o
- .bss.s_app_state
-                0x000051a3        0x1 src/c/main.c.57.o
- .bss.s_current_icon_color_is_black
-                0x000051a4        0x1 src/c/main.c.57.o
- .bss.s_icons_loaded
-                0x000051a5        0x1 src/c/main.c.57.o
- *fill*         0x000051a6        0x2 
- .bss.s_icon_setting
-                0x000051a8        0x4 src/c/main.c.57.o
- .bss.s_icon_save
-                0x000051ac        0x4 src/c/main.c.57.o
- .bss.s_icon_graph
-                0x000051b0        0x4 src/c/main.c.57.o
- .bss.s_icon_down
-                0x000051b4        0x4 src/c/main.c.57.o
- .bss.s_icon_up
-                0x000051b8        0x4 src/c/main.c.57.o
- .bss.s_icon_trash
-                0x000051bc        0x4 src/c/main.c.57.o
- .bss.s_icon_check
-                0x000051c0        0x4 src/c/main.c.57.o
- .bss.s_icon_stop
-                0x000051c4        0x4 src/c/main.c.57.o
- .bss.s_icon_pause
-                0x000051c8        0x4 src/c/main.c.57.o
- .bss.s_icon_play
-                0x000051cc        0x4 src/c/main.c.57.o
- .bss.s_current_main_fg
-                0x000051d0        0x1 src/c/main.c.57.o
- .bss.s_current_main_bg
-                0x000051d1        0x1 src/c/main.c.57.o
- *fill*         0x000051d2        0x2 
- .bss.s_font_mid_data
-                0x000051d4        0x4 src/c/main.c.57.o
- .bss.s_font_colon
-                0x000051d8        0x4 src/c/main.c.57.o
- .bss.s_font_long_time
-                0x000051dc        0x4 src/c/main.c.57.o
- .bss.s_font_huge_time
-                0x000051e0        0x4 src/c/main.c.57.o
- .bss.s_action_bar
-                0x000051e4        0x4 src/c/main.c.57.o
- .bss.s_mid_bg_layer
-                0x000051e8        0x4 src/c/main.c.57.o
- .bss.s_graph_layer
-                0x000051ec        0x4 src/c/main.c.57.o
- .bss.s_step_layer
-                0x000051f0        0x4 src/c/main.c.57.o
- .bss.s_hr_layer
-                0x000051f4        0x4 src/c/main.c.57.o
- .bss.s_dist_layer
-                0x000051f8        0x4 src/c/main.c.57.o
- .bss.s_clock_layer
-                0x000051fc        0x4 src/c/main.c.57.o
- .bss.s_time_sec_layer
-                0x00005200        0x4 src/c/main.c.57.o
- .bss.s_time_colon2_layer
-                0x00005204        0x4 src/c/main.c.57.o
- .bss.s_time_min_layer
-                0x00005208        0x4 src/c/main.c.57.o
- .bss.s_time_colon1_layer
-                0x0000520c        0x4 src/c/main.c.57.o
- .bss.s_time_hour_layer
-                0x00005210        0x4 src/c/main.c.57.o
- .bss.s_main_window
-                0x00005214        0x4 src/c/main.c.57.o
- .bss.s_current_fg
-                0x00005218        0x1 src/c/ui/ui_activity_picker.c.57.o
- .bss.s_current_bg
-                0x00005219        0x1 src/c/ui/ui_activity_picker.c.57.o
- *fill*         0x0000521a        0x2 
- .bss.s_preview_activity_idx
-                0x0000521c        0x4 src/c/ui/ui_activity_picker.c.57.o
- .bss.s_is_activity_picking
-                0x00005220        0x1 src/c/ui/ui_activity_picker.c.57.o
- *fill*         0x00005221        0x3 
- .bss.s_activity_picker_layer
-                0x00005224        0x4 src/c/ui/ui_activity_picker.c.57.o
- .bss.s_is_intermediate_menu
-                0x00005228        0x1 src/c/ui/ui_intermediate_menu.c.57.o
- *fill*         0x00005229        0x3 
  .bss.s_is_long_workout_ptr
-                0x0000522c        0x4 src/c/ui/ui_map.c.57.o
- .bss.s_sec_ptr
-                0x00005230        0x4 src/c/ui/ui_map.c.57.o
- .bss.s_min_ptr
-                0x00005234        0x4 src/c/ui/ui_map.c.57.o
- .bss.s_hour_ptr
-                0x00005238        0x4 src/c/ui/ui_map.c.57.o
- .bss.s_clock_ptr
-                0x0000523c        0x4 src/c/ui/ui_map.c.57.o
- .bss.s_has_received_data
-                0x00005240        0x1 src/c/ui/ui_map.c.57.o
- *fill*         0x00005241        0x3 
- .bss.s_map_rle_len
-                0x00005244        0x4 src/c/ui/ui_map.c.57.o
- .bss.s_map_rle_data
-                0x00005248      0x600 src/c/ui/ui_map.c.57.o
- .bss.s_is_map_active
-                0x00005848        0x1 src/c/ui/ui_map.c.57.o
- *fill*         0x00005849        0x3 
- .bss.s_map_layer
-                0x0000584c        0x4 src/c/ui/ui_map.c.57.o
- .bss.msg_buf.0
-                0x00005850       0x40 src/c/ui/ui_marquee.c.57.o
- .bss.custom_msg_buf.1
-                0x00005890       0x40 src/c/ui/ui_marquee.c.57.o
- .bss.s_current_app_state
-                0x000058d0        0x1 src/c/ui/ui_marquee.c.57.o
- .bss.s_current_bg
-                0x000058d1        0x1 src/c/ui/ui_marquee.c.57.o
- .bss.s_current_fg
-                0x000058d2        0x1 src/c/ui/ui_marquee.c.57.o
- .bss.s_is_custom_marquee
-                0x000058d3        0x1 src/c/ui/ui_marquee.c.57.o
- .bss.s_marquee_timer
-                0x000058d4        0x4 src/c/ui/ui_marquee.c.57.o
- .bss.s_marquee_anim
-                0x000058d8        0x4 src/c/ui/ui_marquee.c.57.o
- .bss.s_msg_container_layer
-                0x000058dc        0x4 src/c/ui/ui_marquee.c.57.o
- .bss.s_msg_layer
-                0x000058e0        0x4 src/c/ui/ui_marquee.c.57.o
- .bss.s_graph_layer
-                0x000058e4        0x4 src/c/ui/ui_marquee.c.57.o
+                0x00004980        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_is_paused_ptr
+                0x00004984        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_app_state_ptr
+                0x00004988        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_step_layer
+                0x0000498c        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_hr_layer
+                0x00004990        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_dist_layer
+                0x00004994        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_step_buf
+                0x00004998        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_hr_buf  0x0000499c        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_dist_buf
+                0x000049a0        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_time_sec_buf
+                0x000049a4        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_time_min_buf
+                0x000049a8        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_time_hour_buf
+                0x000049ac        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_graph_dirty_cb
+                0x000049b0        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_ui_update_cb
+                0x000049b4        0x4 src/c/comm/comm_service.c.57.o
+ .bss.s_graph_min_label
+                0x000049b8       0x10 src/c/comm/graph_data.c.57.o
+ .bss.s_graph_max_label
+                0x000049c8       0x10 src/c/comm/graph_data.c.57.o
+ .bss.s_graph_x_label
+                0x000049d8       0x10 src/c/comm/graph_data.c.57.o
+ .bss.s_graph_y_label
+                0x000049e8       0x10 src/c/comm/graph_data.c.57.o
+ .bss.s_last_user_lower_time
+                0x000049f8        0x4 src/c/comm/graph_data.c.57.o
+ .bss.s_last_user_mid_time
+                0x000049fc        0x4 src/c/comm/graph_data.c.57.o
+ .bss.s_is_id_protocol_active
+                0x00004a00        0x1 src/c/comm/graph_data.c.57.o
+ *fill*         0x00004a01        0x3 
+ .bss.s_current_lower_mode
+                0x00004a04        0x4 src/c/comm/graph_data.c.57.o
+ .bss.s_lower_page_count
+                0x00004a08        0x4 src/c/comm/graph_data.c.57.o
+ .bss.s_lower_pages
+                0x00004a0c      0x348 src/c/comm/graph_data.c.57.o
+ .bss.s_current_mid_mode
+                0x00004d54        0x4 src/c/comm/graph_data.c.57.o
+ .bss.s_mid_page_count
+                0x00004d58        0x4 src/c/comm/graph_data.c.57.o
+ .bss.s_mid_pages
+                0x00004d5c      0x348 src/c/comm/graph_data.c.57.o
+ .bss.s_graph_id
+                0x000050a4        0x4 src/c/comm/graph_data.c.57.o
+ .bss.s_graph_count
+                0x000050a8        0x4 src/c/comm/graph_data.c.57.o
+ .bss.s_graph_data
+                0x000050ac       0xb4 src/c/comm/graph_data.c.57.o
+ .bss.s_seconds_counter.0
+                0x00005160        0x4 src/c/main.c.57.o
+ .bss.last_tick_app_state.1
+                0x00005164        0x1 src/c/main.c.57.o
+ *fill*         0x00005165        0x3 
+ .bss.state0_demo_timer.2
+                0x00005168        0x4 src/c/main.c.57.o
+ .bss.last_clock_buf.3
+                0x0000516c       0x10 src/c/main.c.57.o
+ *fill*         0x0000517c        0x4 
+ .bss.s_long_click_start_time
+                0x00005180        0x8 src/c/main.c.57.o
+ .bss.s_ignore_single_click
+                0x00005188        0x1 src/c/main.c.57.o
+ *fill*         0x00005189        0x3 
+ .bss.s_ignore_single_click_timer
+                0x0000518c        0x4 src/c/main.c.57.o
+ .bss.s_rect_sec_3
+                0x00005190        0x8 src/c/main.c.57.o
+ .bss.s_rect_col2_3
+                0x00005198        0x8 src/c/main.c.57.o
+ .bss.s_rect_min_3
+                0x000051a0        0x8 src/c/main.c.57.o
+ .bss.s_rect_sec_5
+                0x000051a8        0x8 src/c/main.c.57.o
+ .bss.s_rect_col2_5
+                0x000051b0        0x8 src/c/main.c.57.o
+ .bss.s_rect_min_5
+                0x000051b8        0x8 src/c/main.c.57.o
+ .bss.s_rect_col1_5
+                0x000051c0        0x8 src/c/main.c.57.o
+ .bss.s_rect_hour_5
+                0x000051c8        0x8 src/c/main.c.57.o
+ .bss.s_current_activity
+                0x000051d0        0x1 src/c/main.c.57.o
+ .bss.s_has_hr_sensor
+                0x000051d1        0x1 src/c/main.c.57.o
+ .bss.s_is_long_workout
+                0x000051d2        0x1 src/c/main.c.57.o
+ .bss.s_app_state
+                0x000051d3        0x1 src/c/main.c.57.o
+ .bss.s_current_icon_color_is_black
+                0x000051d4        0x1 src/c/main.c.57.o
+ .bss.s_icons_loaded
+                0x000051d5        0x1 src/c/main.c.57.o
+ *fill*         0x000051d6        0x2 
+ .bss.s_icon_setting
+                0x000051d8        0x4 src/c/main.c.57.o
+ .bss.s_icon_save
+                0x000051dc        0x4 src/c/main.c.57.o
+ .bss.s_icon_graph
+                0x000051e0        0x4 src/c/main.c.57.o
+ .bss.s_icon_down
+                0x000051e4        0x4 src/c/main.c.57.o
+ .bss.s_icon_up
+                0x000051e8        0x4 src/c/main.c.57.o
+ .bss.s_icon_trash
+                0x000051ec        0x4 src/c/main.c.57.o
+ .bss.s_icon_check
+                0x000051f0        0x4 src/c/main.c.57.o
+ .bss.s_icon_stop
+                0x000051f4        0x4 src/c/main.c.57.o
+ .bss.s_icon_pause
+                0x000051f8        0x4 src/c/main.c.57.o
+ .bss.s_icon_play
+                0x000051fc        0x4 src/c/main.c.57.o
+ .bss.s_current_main_fg
+                0x00005200        0x1 src/c/main.c.57.o
+ .bss.s_current_main_bg
+                0x00005201        0x1 src/c/main.c.57.o
+ *fill*         0x00005202        0x2 
+ .bss.s_font_mid_data
+                0x00005204        0x4 src/c/main.c.57.o
+ .bss.s_font_colon
+                0x00005208        0x4 src/c/main.c.57.o
+ .bss.s_font_long_time
+                0x0000520c        0x4 src/c/main.c.57.o
+ .bss.s_font_huge_time
+                0x00005210        0x4 src/c/main.c.57.o
  .bss.s_action_bar
-                0x000058e8        0x4 src/c/ui/ui_marquee.c.57.o
- .bss.s_window  0x000058ec        0x4 src/c/ui/ui_marquee.c.57.o
+                0x00005214        0x4 src/c/main.c.57.o
+ .bss.s_mid_bg_layer
+                0x00005218        0x4 src/c/main.c.57.o
+ .bss.s_graph_layer
+                0x0000521c        0x4 src/c/main.c.57.o
+ .bss.s_step_layer
+                0x00005220        0x4 src/c/main.c.57.o
+ .bss.s_hr_layer
+                0x00005224        0x4 src/c/main.c.57.o
+ .bss.s_dist_layer
+                0x00005228        0x4 src/c/main.c.57.o
+ .bss.s_clock_layer
+                0x0000522c        0x4 src/c/main.c.57.o
+ .bss.s_time_sec_layer
+                0x00005230        0x4 src/c/main.c.57.o
+ .bss.s_time_colon2_layer
+                0x00005234        0x4 src/c/main.c.57.o
+ .bss.s_time_min_layer
+                0x00005238        0x4 src/c/main.c.57.o
+ .bss.s_time_colon1_layer
+                0x0000523c        0x4 src/c/main.c.57.o
+ .bss.s_time_hour_layer
+                0x00005240        0x4 src/c/main.c.57.o
+ .bss.s_main_window
+                0x00005244        0x4 src/c/main.c.57.o
+ .bss.s_current_fg
+                0x00005248        0x1 src/c/ui/ui_activity_picker.c.57.o
+ .bss.s_current_bg
+                0x00005249        0x1 src/c/ui/ui_activity_picker.c.57.o
+ *fill*         0x0000524a        0x2 
+ .bss.s_preview_activity_idx
+                0x0000524c        0x4 src/c/ui/ui_activity_picker.c.57.o
+ .bss.s_is_activity_picking
+                0x00005250        0x1 src/c/ui/ui_activity_picker.c.57.o
+ *fill*         0x00005251        0x3 
+ .bss.s_activity_picker_layer
+                0x00005254        0x4 src/c/ui/ui_activity_picker.c.57.o
+ .bss.s_is_intermediate_menu
+                0x00005258        0x1 src/c/ui/ui_intermediate_menu.c.57.o
+ *fill*         0x00005259        0x3 
+ .bss.s_is_long_workout_ptr
+                0x0000525c        0x4 src/c/ui/ui_map.c.57.o
+ .bss.s_sec_ptr
+                0x00005260        0x4 src/c/ui/ui_map.c.57.o
+ .bss.s_min_ptr
+                0x00005264        0x4 src/c/ui/ui_map.c.57.o
+ .bss.s_hour_ptr
+                0x00005268        0x4 src/c/ui/ui_map.c.57.o
+ .bss.s_clock_ptr
+                0x0000526c        0x4 src/c/ui/ui_map.c.57.o
+ .bss.s_has_received_data
+                0x00005270        0x1 src/c/ui/ui_map.c.57.o
+ *fill*         0x00005271        0x3 
+ .bss.s_map_rle_len
+                0x00005274        0x4 src/c/ui/ui_map.c.57.o
+ .bss.s_map_rle_data
+                0x00005278      0x600 src/c/ui/ui_map.c.57.o
+ .bss.s_is_map_active
+                0x00005878        0x1 src/c/ui/ui_map.c.57.o
+ *fill*         0x00005879        0x3 
+ .bss.s_map_layer
+                0x0000587c        0x4 src/c/ui/ui_map.c.57.o
+ .bss.msg_buf.0
+                0x00005880       0x40 src/c/ui/ui_marquee.c.57.o
+ .bss.custom_msg_buf.1
+                0x000058c0       0x40 src/c/ui/ui_marquee.c.57.o
+ .bss.s_current_app_state
+                0x00005900        0x1 src/c/ui/ui_marquee.c.57.o
+ .bss.s_current_bg
+                0x00005901        0x1 src/c/ui/ui_marquee.c.57.o
+ .bss.s_current_fg
+                0x00005902        0x1 src/c/ui/ui_marquee.c.57.o
+ .bss.s_is_custom_marquee
+                0x00005903        0x1 src/c/ui/ui_marquee.c.57.o
+ .bss.s_marquee_timer
+                0x00005904        0x4 src/c/ui/ui_marquee.c.57.o
+ .bss.s_marquee_anim
+                0x00005908        0x4 src/c/ui/ui_marquee.c.57.o
+ .bss.s_msg_container_layer
+                0x0000590c        0x4 src/c/ui/ui_marquee.c.57.o
+ .bss.s_msg_layer
+                0x00005910        0x4 src/c/ui/ui_marquee.c.57.o
+ .bss.s_graph_layer
+                0x00005914        0x4 src/c/ui/ui_marquee.c.57.o
+ .bss.s_action_bar
+                0x00005918        0x4 src/c/ui/ui_marquee.c.57.o
+ .bss.s_window  0x0000591c        0x4 src/c/ui/ui_marquee.c.57.o
 
 DISCARD
  libc.a(*)
@@ -2556,20 +2556,20 @@ LOAD /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../li
  .debug_aranges
                 0x00000488       0x18 src/message_keys.auto.c.57.o
 
-.debug_line     0x00000000     0x5b26
+.debug_line     0x00000000     0x5b28
  .debug_line    0x00000000       0x44 src/c/app_state.c.57.o
  .debug_line    0x00000044      0xa04 src/c/comm/comm_service.c.57.o
  .debug_line    0x00000a48      0xeba src/c/comm/graph_data.c.57.o
  .debug_line    0x00001902     0x181d src/c/main.c.57.o
- .debug_line    0x0000311f      0x4df src/c/ui/ui_activity_picker.c.57.o
- .debug_line    0x000035fe       0x3e src/c/ui/ui_color_picker.c.57.o
- .debug_line    0x0000363c      0xe78 src/c/ui/ui_graph_layer.c.57.o
- .debug_line    0x000044b4      0x48c src/c/ui/ui_intermediate_menu.c.57.o
- .debug_line    0x00004940      0x745 src/c/ui/ui_map.c.57.o
- .debug_line    0x00005085      0x706 src/c/ui/ui_marquee.c.57.o
- .debug_line    0x0000578b      0x16a aplite/appinfo.auto.c.57.o
- .debug_line    0x000058f5      0x11c aplite/src/resource_ids.auto.c.57.o
- .debug_line    0x00005a11      0x115 src/message_keys.auto.c.57.o
+ .debug_line    0x0000311f      0x4e1 src/c/ui/ui_activity_picker.c.57.o
+ .debug_line    0x00003600       0x3e src/c/ui/ui_color_picker.c.57.o
+ .debug_line    0x0000363e      0xe78 src/c/ui/ui_graph_layer.c.57.o
+ .debug_line    0x000044b6      0x48c src/c/ui/ui_intermediate_menu.c.57.o
+ .debug_line    0x00004942      0x745 src/c/ui/ui_map.c.57.o
+ .debug_line    0x00005087      0x706 src/c/ui/ui_marquee.c.57.o
+ .debug_line    0x0000578d      0x16a aplite/appinfo.auto.c.57.o
+ .debug_line    0x000058f7      0x11c aplite/src/resource_ids.auto.c.57.o
+ .debug_line    0x00005a13      0x115 src/message_keys.auto.c.57.o
 
 .debug_str      0x00000000     0x31e2
  .debug_str     0x00000000     0x31e2 src/c/app_state.c.57.o
