@@ -12,28 +12,31 @@ static void activity_picker_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_fill_color(ctx, s_current_bg);
     graphics_fill_rect(ctx, b, 0, GCornerNone);
     
-    int text_h = 18;
+    int text_h = 16;
     graphics_context_set_text_color(ctx, s_current_fg);
-    graphics_draw_text(ctx, "ACTIVITY TYPE", fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(0, 0, b.size.w, text_h), 0, GTextAlignmentCenter, NULL);
+    graphics_draw_text(ctx, "ACTIVITY TYPE", fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(0, 2, b.size.w, text_h), 0, GTextAlignmentCenter, NULL);
     
-    int item_h = 24;
-    int oy = text_h + 6;
     int prev_idx = (s_preview_activity_idx - 1 + ACTIVITY_COUNT) % ACTIVITY_COUNT;
     int next_idx = (s_preview_activity_idx + 1) % ACTIVITY_COUNT;
     
+    // 1. 前の項目（小さく表示）
+    int prev_y = text_h + 4;
     graphics_context_set_text_color(ctx, s_current_fg);
-    graphics_draw_text(ctx, ACTIVITY_NAMES[prev_idx], fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(0, oy, b.size.w, item_h), 0, GTextAlignmentCenter, NULL);
-    oy += item_h + 4;
+    graphics_draw_text(ctx, ACTIVITY_NAMES[prev_idx], fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, prev_y, b.size.w, 16), 0, GTextAlignmentCenter, NULL);
     
+    // 2. 選択中の項目（特大フォント GOTHIC_24_BOLD でドーンと強調）
+    int sel_box_y = prev_y + 18;
+    int sel_box_h = 32;
     graphics_context_set_fill_color(ctx, s_current_fg);
-    graphics_fill_rect(ctx, GRect(5, oy, b.size.w - 10, item_h + 4), 4, GCornersAll);
-    graphics_context_set_text_color(ctx, s_current_bg);
-    graphics_draw_text(ctx, ACTIVITY_NAMES[s_preview_activity_idx], fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD), GRect(0, oy + 2, b.size.w, item_h), 0, GTextAlignmentCenter, NULL);
-    oy += item_h + 8;
+    graphics_fill_rect(ctx, GRect(4, sel_box_y, b.size.w - 8, sel_box_h), 5, GCornersAll);
     
+    graphics_context_set_text_color(ctx, s_current_bg);
+    graphics_draw_text(ctx, ACTIVITY_NAMES[s_preview_activity_idx], fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(0, sel_box_y + 2, b.size.w, 28), GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+    
+    // 3. 次の項目（小さく表示）
+    int next_y = sel_box_y + sel_box_h + 4;
     graphics_context_set_text_color(ctx, s_current_fg);
-    graphics_draw_text(ctx, ACTIVITY_NAMES[next_idx], fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(0, oy, b.size.w, item_h), 0, GTextAlignmentCenter, NULL);
-
+    graphics_draw_text(ctx, ACTIVITY_NAMES[next_idx], fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, next_y, b.size.w, 16), 0, GTextAlignmentCenter, NULL);
 }
 
 void ui_activity_picker_create(Window *window, ActionBarLayer *action_bar, ActivityType initial_type, GColor main_bg, GColor main_fg) {
