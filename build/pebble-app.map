@@ -2118,7 +2118,7 @@ LOAD /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../li
  .got.plt       0x0000496c        0xc src/c/app_state.c.57.o
                 0x0000496c                _GLOBAL_OFFSET_TABLE_
 
-.bss            0x00004978      0xfa8
+.bss            0x00004978     0x11a8
  *(.bss)
  *(.bss.*)
  .bss.s_map_open_requested
@@ -2324,37 +2324,37 @@ LOAD /home/naokiiwaoka/.pebble-sdk/SDKs/4.33.1/toolchain/arm-none-eabi/bin/../li
  .bss.s_map_rle_len
                 0x00005274        0x4 src/c/ui/ui_map.c.57.o
  .bss.s_map_rle_data
-                0x00005278      0x600 src/c/ui/ui_map.c.57.o
+                0x00005278      0x800 src/c/ui/ui_map.c.57.o
  .bss.s_is_map_active
-                0x00005878        0x1 src/c/ui/ui_map.c.57.o
- *fill*         0x00005879        0x3 
+                0x00005a78        0x1 src/c/ui/ui_map.c.57.o
+ *fill*         0x00005a79        0x3 
  .bss.s_map_layer
-                0x0000587c        0x4 src/c/ui/ui_map.c.57.o
+                0x00005a7c        0x4 src/c/ui/ui_map.c.57.o
  .bss.msg_buf.0
-                0x00005880       0x40 src/c/ui/ui_marquee.c.57.o
+                0x00005a80       0x40 src/c/ui/ui_marquee.c.57.o
  .bss.custom_msg_buf.1
-                0x000058c0       0x40 src/c/ui/ui_marquee.c.57.o
+                0x00005ac0       0x40 src/c/ui/ui_marquee.c.57.o
  .bss.s_current_app_state
-                0x00005900        0x1 src/c/ui/ui_marquee.c.57.o
+                0x00005b00        0x1 src/c/ui/ui_marquee.c.57.o
  .bss.s_current_bg
-                0x00005901        0x1 src/c/ui/ui_marquee.c.57.o
+                0x00005b01        0x1 src/c/ui/ui_marquee.c.57.o
  .bss.s_current_fg
-                0x00005902        0x1 src/c/ui/ui_marquee.c.57.o
+                0x00005b02        0x1 src/c/ui/ui_marquee.c.57.o
  .bss.s_is_custom_marquee
-                0x00005903        0x1 src/c/ui/ui_marquee.c.57.o
+                0x00005b03        0x1 src/c/ui/ui_marquee.c.57.o
  .bss.s_marquee_timer
-                0x00005904        0x4 src/c/ui/ui_marquee.c.57.o
+                0x00005b04        0x4 src/c/ui/ui_marquee.c.57.o
  .bss.s_marquee_anim
-                0x00005908        0x4 src/c/ui/ui_marquee.c.57.o
+                0x00005b08        0x4 src/c/ui/ui_marquee.c.57.o
  .bss.s_msg_container_layer
-                0x0000590c        0x4 src/c/ui/ui_marquee.c.57.o
+                0x00005b0c        0x4 src/c/ui/ui_marquee.c.57.o
  .bss.s_msg_layer
-                0x00005910        0x4 src/c/ui/ui_marquee.c.57.o
+                0x00005b10        0x4 src/c/ui/ui_marquee.c.57.o
  .bss.s_graph_layer
-                0x00005914        0x4 src/c/ui/ui_marquee.c.57.o
+                0x00005b14        0x4 src/c/ui/ui_marquee.c.57.o
  .bss.s_action_bar
-                0x00005918        0x4 src/c/ui/ui_marquee.c.57.o
- .bss.s_window  0x0000591c        0x4 src/c/ui/ui_marquee.c.57.o
+                0x00005b18        0x4 src/c/ui/ui_marquee.c.57.o
+ .bss.s_window  0x00005b1c        0x4 src/c/ui/ui_marquee.c.57.o
 
 DISCARD
  libc.a(*)
