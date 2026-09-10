@@ -167,6 +167,11 @@ static void touch_event_handler(const TouchEvent *event, void *context) {
 #endif
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+    if (ui_map_is_active()) {
+        comm_service_send_button_event(EVENT_BUTTON_UP_CLICK);
+        vibes_short_pulse();
+        return;
+    }
 #if defined(PBL_COLOR)
     if (ui_color_picker_is_active() && s_action_bar) {
         int idx = (ui_color_picker_get_selected_idx() - 1 + 64) % 64;
@@ -360,6 +365,7 @@ static void generic_long_click_down_handler(ClickRecognizerRef recognizer, void 
 }
 
 static void up_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
+    if (ui_map_is_active()) return;
     bool ignore = ui_activity_picker_is_active();
 #if defined(PBL_COLOR)
     ignore = ignore || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
@@ -400,6 +406,7 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
 }
 
 static void down_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
+    if (ui_map_is_active()) return;
     bool ignore = ui_activity_picker_is_active();
 #if defined(PBL_COLOR)
     ignore = ignore || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
@@ -573,6 +580,7 @@ static void update_ui_state(void) {
     if (comm_service_is_map_open_requested() && !ui_map_is_active() && s_main_window) {
         comm_service_clear_map_open_request();
         ui_map_create(s_main_window, s_current_main_bg, s_current_main_fg);
+        comm_service_send_map_state(1);
     }
 
     if (s_main_window) {
