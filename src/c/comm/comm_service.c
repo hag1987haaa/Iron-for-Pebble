@@ -47,19 +47,12 @@ void comm_service_set_ui_buffers(
     s_has_hr_sensor = has_hr_sensor;
 }
 
-void comm_service_send_button_event(AppEventID event_id, int legacy_cmd) {
+void comm_service_send_button_event(AppEventID event_id) {
     DictionaryIterator *iter;
     if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
         dict_write_int32(iter, MESSAGE_KEY_KEY_EVENT, (int32_t)event_id);
-        if (legacy_cmd > 0) {
-            dict_write_int32(iter, MESSAGE_KEY_CMD, legacy_cmd);
-        }
         app_message_outbox_send();
     }
-}
-
-void comm_service_send_cmd(int val) {
-    comm_service_send_button_event(EVENT_NONE, val);
 }
 
 void comm_service_send_map_state(int state) {
@@ -95,19 +88,8 @@ void comm_service_send_lower_id(int lower_id) {
 }
 
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
-void comm_service_send_media_event(AppEventID event_id, int legacy_media_cmd) {
-    DictionaryIterator *iter;
-    if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
-        dict_write_int32(iter, MESSAGE_KEY_KEY_EVENT, (int32_t)event_id);
-        if (legacy_media_cmd > 0) {
-            dict_write_int32(iter, MESSAGE_KEY_MEDIA_CMD, legacy_media_cmd);
-        }
-        app_message_outbox_send();
-    }
-}
-
-void comm_service_send_media_cmd(int cmd) {
-    comm_service_send_media_event(EVENT_NONE, cmd);
+void comm_service_send_media_event(AppEventID event_id) {
+    comm_service_send_button_event(event_id);
 }
 #endif
 

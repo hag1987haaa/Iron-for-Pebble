@@ -142,18 +142,18 @@ static void touch_event_handler(const TouchEvent *event, void *context) {
 
             if (dt < SWIPE_MAX_TIME_MS && (abs_dx > SWIPE_MIN_DIST_PX || abs_dy > SWIPE_MIN_DIST_PX)) {
                 if (abs_dx > abs_dy * 2) {
-                    if (dx > 0) comm_service_send_media_event(EVENT_TOUCH_SWIPE_RIGHT, 3); // PREV
-                    else comm_service_send_media_event(EVENT_TOUCH_SWIPE_LEFT, 2);        // NEXT
+                    if (dx > 0) comm_service_send_media_event(EVENT_TOUCH_SWIPE_RIGHT); // PREV
+                    else comm_service_send_media_event(EVENT_TOUCH_SWIPE_LEFT);        // NEXT
                 } else if (abs_dy > abs_dx * 2) {
-                    if (dy > 0) comm_service_send_media_event(EVENT_TOUCH_SWIPE_DOWN, 5); // VOL DOWN
-                    else comm_service_send_media_event(EVENT_TOUCH_SWIPE_UP, 4);        // VOL UP
+                    if (dy > 0) comm_service_send_media_event(EVENT_TOUCH_SWIPE_DOWN); // VOL DOWN
+                    else comm_service_send_media_event(EVENT_TOUCH_SWIPE_UP);        // VOL UP
                 }
                 vibes_short_pulse();
                 s_last_tap_time = 0; 
             } 
             else if (abs_dx <= TAP_MAX_DIST_PX && abs_dy <= TAP_MAX_DIST_PX) {
                 if (s_last_tap_time != 0 && (current_time - s_last_tap_time) < DOUBLE_TAP_MAX_DELAY_MS) {
-                    comm_service_send_media_event(EVENT_TOUCH_DOUBLE_TAP, 1); // PLAY/PAUSE
+                    comm_service_send_media_event(EVENT_TOUCH_DOUBLE_TAP); // PLAY/PAUSE
                     vibes_short_pulse();
                     s_last_tap_time = 0; 
                 } else {
@@ -185,13 +185,8 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     }
     if (s_ignore_single_click) return;
 
-    if (s_app_state <= 4) {
-        comm_service_send_button_event(EVENT_BUTTON_UP_CLICK, 1);
-        vibes_short_pulse();
-    } else if (s_app_state == 5) {
-        comm_service_send_button_event(EVENT_BUTTON_UP_CLICK, 7);
-        vibes_short_pulse();
-    }
+    comm_service_send_button_event(EVENT_BUTTON_UP_CLICK);
+    vibes_short_pulse();
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -206,7 +201,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
             if (page) comm_service_send_mid_id(page->id);
             ui_map_mark_dirty();
         }
-        comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK, 0);
+        comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK);
         vibes_short_pulse();
         return;
     }
@@ -277,10 +272,6 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
             const MidPageData *page = graph_data_get_current_mid_page();
             if (page) {
                 comm_service_send_mid_id(page->id);
-                // 古いAndroidアプリ互換用（IDプロトコル未検知時のみCMD送信）
-                if (!graph_data_is_id_protocol_active()) {
-                    comm_service_send_cmd(2);
-                }
             }
 
             update_ui_state();
@@ -303,18 +294,15 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         }
         update_ui_state();
         vibes_short_pulse();
-    } else if (s_app_state == 4) {
-        comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK, 2);
-        vibes_short_pulse();
-    } else if (s_app_state == 6) {
-        comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK, 9);
+    } else {
+        comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK);
         vibes_short_pulse();
     }
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_map_is_active()) {
-        comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK, 0);
+        comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK);
         vibes_short_pulse();
         return;
     }
@@ -346,28 +334,18 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
             const LowerPageData *page = graph_data_get_current_lower_page();
             if (page) {
                 comm_service_send_lower_id(page->id);
-                // 古いAndroidアプリ互換用（IDプロトコル未検知時のみCMD送信）
-                if (!graph_data_is_id_protocol_active()) {
-                    comm_service_send_cmd(6);
-                }
             }
             update_ui_state();
             vibes_short_pulse();
         } else {
-            // 従来通りGraphSync (CMD: 6) を送信
-            comm_service_send_cmd(6);
+            comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK);
             vibes_short_pulse();
         }
         return;
     }
 
-    if (s_app_state != 5) {
-        comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK, 6);
-        vibes_short_pulse();
-    } else if (s_app_state == 5) {
-        comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK, 8);
-        vibes_short_pulse();
-    }
+    comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK);
+    vibes_short_pulse();
 }
 
 static void generic_long_click_down_handler(ClickRecognizerRef recognizer, void *context) {
@@ -391,7 +369,7 @@ static void up_long_click_release_handler(ClickRecognizerRef recognizer, void *c
     
     if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
 
-    comm_service_send_button_event(EVENT_BUTTON_UP_LONG, 50);
+    comm_service_send_button_event(EVENT_BUTTON_UP_LONG);
     ui_marquee_trigger_custom("UP LONG SEND", s_current_main_fg, s_current_main_bg, s_app_state);
     vibes_short_pulse();
 }
@@ -402,7 +380,7 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
         if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
         
         // マップ表示中のSELECT長押し: 現在地センタリング・リセット
-        comm_service_send_button_event(EVENT_BUTTON_SELECT_LONG, 0);
+        comm_service_send_button_event(EVENT_BUTTON_SELECT_LONG);
         ui_marquee_trigger_custom("MAP RE-CENTER", s_current_main_fg, s_current_main_bg, s_app_state);
         vibes_short_pulse();
         return;
@@ -416,7 +394,7 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
     
     if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
 
-    comm_service_send_button_event(EVENT_BUTTON_SELECT_LONG, 51);
+    comm_service_send_button_event(EVENT_BUTTON_SELECT_LONG);
     ui_marquee_trigger_custom("SELECT LONG SEND", s_current_main_fg, s_current_main_bg, s_app_state);
     vibes_short_pulse();
 }
@@ -431,7 +409,7 @@ static void down_long_click_release_handler(ClickRecognizerRef recognizer, void 
     
     if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
 
-    comm_service_send_button_event(EVENT_BUTTON_DOWN_LONG, 52);
+    comm_service_send_button_event(EVENT_BUTTON_DOWN_LONG);
     ui_marquee_trigger_custom("DOWN LONG SEND", s_current_main_fg, s_current_main_bg, s_app_state);
     vibes_short_pulse();
 }
