@@ -1289,6 +1289,7 @@ static void init(void) {
     graph_data_init();
     ui_course_picker_init();
     comm_service_init(update_ui_state, on_graph_dirty_request);
+    comm_service_request_sync();
     tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
 
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)

@@ -23,3 +23,6 @@ void ui_course_picker_handle_select(void);
 int ui_course_picker_get_count(void);
 const CourseItem* ui_course_picker_get_courses(void);
 void ui_course_picker_set_course(int idx, int id, const char *name, bool is_enabled);
+
+// Androidからの一括区切り文字列("1,NAME1|0,NAME2...")のパース＆一括保存
+void ui_course_picker_parse_and_set(const char *data_str);

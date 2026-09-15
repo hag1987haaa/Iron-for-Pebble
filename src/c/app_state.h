@@ -30,6 +30,7 @@
 #define MESSAGE_KEY_MAP_STATE 10022
 #define MESSAGE_KEY_KEY_PAN_DX 10023
 #define MESSAGE_KEY_KEY_PAN_DY 10024
+#define MESSAGE_KEY_KEY_COURSES_DATA 10025
 
 typedef enum {
     EVENT_NONE = 0,
@@ -58,11 +59,15 @@ typedef enum {
 #define PK_COURSES_COUNT 62
 #define PK_COURSES_DATA 63
 
-#define MAX_COURSES 5
+#if defined(PBL_PLATFORM_APLITE)
+#define MAX_COURSES 10
+#else
+#define MAX_COURSES 20
+#endif
 #define COURSE_NAME_LEN 13
 
-typedef struct {
-    int id;
+typedef struct __attribute__((__packed__)) {
+    uint8_t id;
     char name[COURSE_NAME_LEN];
     bool is_enabled;
 } CourseItem;

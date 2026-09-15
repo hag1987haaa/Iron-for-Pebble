@@ -1,4 +1,5 @@
 ﻿#include "../ui/ui_map.h"
+#include "../ui/ui_course_picker.h"
 #include "comm_service.h"
 
 static CommServiceUIUpdateCallback s_ui_update_cb = NULL;
@@ -115,6 +116,14 @@ int32_t comm_service_get_hr_interval_setting(void) {
     return s_hr_interval_setting;
 }
 
+void comm_service_request_sync(void) {
+    DictionaryIterator *iter;
+    if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
+        dict_write_int32(iter, MESSAGE_KEY_CMD, 5);
+        app_message_outbox_send();
+    }
+}
+
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
     Tuple *t = dict_read_first(iterator);
     bool should_update_ui = false;
@@ -223,6 +232,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             int c_total = t_total ? (int)app_get_int_from_tuple(t_total) : 1;
             ui_map_update_data(t->value->data, t->length, c_idx, c_total);
             should_update_ui = true;
+        }
+        else if (t->key == MESSAGE_KEY_KEY_COURSES_DATA) {
+            const char *raw_courses = t->value->cstring;
+            if (raw_courses && *raw_courses) {
+                ui_course_picker_parse_and_set(raw_courses);
+                should_update_ui = true;
+            }
         }
         else if (t->key == MESSAGE_KEY_MAP_STATE) {
             int map_state = (int)app_get_int_from_tuple(t);

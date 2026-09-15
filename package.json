@@ -44,7 +44,8 @@
             "MAP_TOTAL_CHUNKS": 10021,
             "MAP_STATE": 10022,
             "KEY_PAN_DX": 10023,
-            "KEY_PAN_DY": 10024
+            "KEY_PAN_DY": 10024,
+            "KEY_COURSES_DATA": 10025
         },
         "projectType": "native",
         "resources": {
