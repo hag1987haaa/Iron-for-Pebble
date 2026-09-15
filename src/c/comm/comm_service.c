@@ -87,9 +87,18 @@ void comm_service_send_lower_id(int lower_id) {
     }
 }
 
-#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
 void comm_service_send_media_event(AppEventID event_id) {
     comm_service_send_button_event(event_id);
+}
+
+void comm_service_send_touch_pan(int16_t dx, int16_t dy) {
+    DictionaryIterator *iter;
+    if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
+        dict_write_int32(iter, MESSAGE_KEY_KEY_PAN_DX, (int32_t)dx);
+        dict_write_int32(iter, MESSAGE_KEY_KEY_PAN_DY, (int32_t)dy);
+        app_message_outbox_send();
+    }
 }
 #endif
 

@@ -47,6 +47,7 @@ static GRect s_rect_hour_5, s_rect_col1_5, s_rect_min_5, s_rect_col2_5, s_rect_s
 static AppTimer *s_ignore_single_click_timer = NULL;
 static bool s_ignore_single_click = false;
 static uint64_t s_long_click_start_time = 0;
+static bool s_map_is_heading_up = false;
 
 /* ==========================================================
    プロトタイプ宣言
@@ -116,7 +117,7 @@ static void load_action_icons(bool is_black) {
 /* ==========================================================
    イベントハンドラ群 (Touch, Click)
    ========================================================== */
-#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
 static void touch_event_handler(const TouchEvent *event, void *context) {
     uint64_t current_time = app_get_current_time_ms();
     static int s_touch_start_x = 0;
@@ -141,13 +142,7 @@ static void touch_event_handler(const TouchEvent *event, void *context) {
             int abs_dy = (dy > 0) ? dy : -dy;
 
             if (dt < SWIPE_MAX_TIME_MS && (abs_dx > SWIPE_MIN_DIST_PX || abs_dy > SWIPE_MIN_DIST_PX)) {
-                if (abs_dx > abs_dy * 2) {
-                    if (dx > 0) comm_service_send_media_event(EVENT_TOUCH_SWIPE_RIGHT); // PREV
-                    else comm_service_send_media_event(EVENT_TOUCH_SWIPE_LEFT);        // NEXT
-                } else if (abs_dy > abs_dx * 2) {
-                    if (dy > 0) comm_service_send_media_event(EVENT_TOUCH_SWIPE_DOWN); // VOL DOWN
-                    else comm_service_send_media_event(EVENT_TOUCH_SWIPE_UP);        // VOL UP
-                }
+                comm_service_send_touch_pan((int16_t)dx, (int16_t)dy);
                 vibes_short_pulse();
                 s_last_tap_time = 0; 
             } 
@@ -196,17 +191,10 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_map_is_active()) {
-        // マップ表示中のSELECT短押し: 中段連動データを切り替え
-        int mid_count = graph_data_get_mid_page_count();
-        if (mid_count > 0) {
-            int current_mode = graph_data_get_current_mid_mode();
-            current_mode = (current_mode + 1) % mid_count;
-            graph_data_set_current_mid_mode(current_mode);
-            const MidPageData *page = graph_data_get_current_mid_page();
-            if (page) comm_service_send_mid_id(page->id);
-            ui_map_mark_dirty();
-        }
+        // マップ表示中のSELECT短押し: マップ中心位置化・拡大率初期化・ノースアップ/ノーズアップ切替
+        s_map_is_heading_up = !s_map_is_heading_up;
         comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK);
+        ui_marquee_trigger_custom(s_map_is_heading_up ? "NOSE UP" : "NORTH UP", s_current_main_fg, s_current_main_bg, s_app_state);
         vibes_short_pulse();
         return;
     }
@@ -382,13 +370,7 @@ static void up_long_click_release_handler(ClickRecognizerRef recognizer, void *c
 
 static void select_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_map_is_active()) {
-        trigger_ignore_single_click();
-        if (app_get_current_time_ms() - s_long_click_start_time >= 1200) return;
-        
-        // マップ表示中のSELECT長押し: 現在地センタリング・リセット
-        comm_service_send_button_event(EVENT_BUTTON_SELECT_LONG);
-        ui_marquee_trigger_custom("MAP RE-CENTER", s_current_main_fg, s_current_main_bg, s_app_state);
-        vibes_short_pulse();
+        // マップ表示中の長押しリセットは廃止
         return;
     }
     bool ignore = ui_activity_picker_is_active();
@@ -1307,7 +1289,7 @@ static void init(void) {
     comm_service_init(update_ui_state, on_graph_dirty_request);
     tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
 
-#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
     touch_service_subscribe(touch_event_handler, NULL);
 #endif
     
@@ -1325,7 +1307,7 @@ static void deinit(void) {
         health_service_set_heart_rate_sample_period(0);
     }
 #endif
-#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
     touch_service_unsubscribe();
 #endif
     window_destroy(s_main_window);

@@ -78,28 +78,7 @@ static void draw_rle_map(GContext *ctx, GRect map_rect) {
         }
     }
 
-    // 画面中央の現在地マーカー（常に即座に描画）
-    int cx = map_w / 2;
-    int cy = map_h / 2;
-
-#if defined(PBL_COLOR)
-    // 外枠（白）
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_circle(ctx, GPoint(cx, cy), 6);
-    // 内側（青）
-    graphics_context_set_fill_color(ctx, GColorCobaltBlue);
-    graphics_fill_circle(ctx, GPoint(cx, cy), 4);
-    // 中心点（白）
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_circle(ctx, GPoint(cx, cy), 1);
-#else
-    // モノクロ：白枠＋中心白ドット
-    graphics_context_set_stroke_color(ctx, GColorWhite);
-    graphics_context_set_stroke_width(ctx, 1);
-    graphics_draw_circle(ctx, GPoint(cx, cy), 5);
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_fill_circle(ctx, GPoint(cx, cy), 2);
-#endif
+    // 画面中央の現在地マーカーはAndroid側でアローとして描画するため省略
 }
 
 // レイヤー描画プロシージャ
@@ -318,10 +297,13 @@ void ui_map_update_data(const uint8_t *data, int length, int chunk_idx, int tota
     if (s_map_rle_len + length <= MAX_MAP_RLE_SIZE) {
         memcpy(s_map_rle_data + s_map_rle_len, data, length);
         s_map_rle_len += length;
-        s_has_received_data = true;
     }
-    if (s_map_layer) {
-        layer_mark_dirty(s_map_layer);
+    // 全チャンクが揃った時点で初めて描画フラグを立てて画面更新（途中描画による砂嵐を完全防止）
+    if (chunk_idx == total_chunks - 1) {
+        s_has_received_data = true;
+        if (s_map_layer) {
+            layer_mark_dirty(s_map_layer);
+        }
     }
 }
 

@@ -10,8 +10,9 @@ void comm_service_send_map_state(int state);
 bool comm_service_is_map_open_requested(void);
 void comm_service_clear_map_open_request(void);
 void comm_service_send_button_event(AppEventID event_id);
-#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
 void comm_service_send_media_event(AppEventID event_id);
+void comm_service_send_touch_pan(int16_t dx, int16_t dy);
 #endif
 void comm_service_send_activity_type(ActivityType type);
 void comm_service_send_mid_id(int mid_id);

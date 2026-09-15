@@ -28,6 +28,8 @@
 #define MESSAGE_KEY_MAP_CHUNK_IDX 10020
 #define MESSAGE_KEY_MAP_TOTAL_CHUNKS 10021
 #define MESSAGE_KEY_MAP_STATE 10022
+#define MESSAGE_KEY_KEY_PAN_DX 10023
+#define MESSAGE_KEY_KEY_PAN_DY 10024
 
 typedef enum {
     EVENT_NONE = 0,
@@ -87,7 +89,7 @@ typedef MetricPageData LowerPageData;
 
 #define MAX_GRAPH_DATA 45
 
-#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK)
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
 #define SWIPE_MIN_DIST_PX 30      
 #define SWIPE_MAX_TIME_MS 800
 #define DOUBLE_TAP_MAX_DELAY_MS 500
@@ -132,4 +134,4 @@ static inline bool app_is_numeric_string(const char *str) {
     return true;
 }
 
-#define APP_VERSION_STR "v1.3.3"
+#define APP_VERSION_STR "v1.3.4"
