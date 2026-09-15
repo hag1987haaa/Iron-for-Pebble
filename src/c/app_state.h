@@ -44,11 +44,7 @@ typedef enum {
     EVENT_BUTTON_DOWN_LONG = 13,
     
     // タッチ操作（Emery/Chalk）
-    EVENT_TOUCH_DOUBLE_TAP = 21,
-    EVENT_TOUCH_SWIPE_LEFT = 22,
-    EVENT_TOUCH_SWIPE_RIGHT = 23,
-    EVENT_TOUCH_SWIPE_UP = 24,
-    EVENT_TOUCH_SWIPE_DOWN = 25
+    EVENT_TOUCH_DOUBLE_TAP = 21
 } AppEventID;
 
 #define PK_GRAPH_COUNT 53
@@ -59,6 +55,17 @@ typedef enum {
 #define PK_ACTIVITY_TYPE 59
 #define PK_LAST_MID_ID 60
 #define PK_LAST_LOWER_ID 61
+#define PK_COURSES_COUNT 62
+#define PK_COURSES_DATA 63
+
+#define MAX_COURSES 5
+#define COURSE_NAME_LEN 13
+
+typedef struct {
+    int id;
+    char name[COURSE_NAME_LEN];
+    bool is_enabled;
+} CourseItem;
 
 typedef enum {
   ACTIVITY_RUNNING = 0,

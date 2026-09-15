@@ -7,6 +7,7 @@
 #include "ui/ui_activity_picker.h"
 #include "ui/ui_map.h"
 #include "ui/ui_marquee.h"
+#include "ui/ui_course_picker.h"
 #include "ui/ui_graph_layer.h"
 
 /* ==========================================================
@@ -1286,6 +1287,7 @@ static void main_window_unload(Window *window) {
 
 static void init(void) {
     graph_data_init();
+    ui_course_picker_init();
     comm_service_init(update_ui_state, on_graph_dirty_request);
     tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
 
