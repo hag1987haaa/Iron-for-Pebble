@@ -139,7 +139,11 @@ void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color
     create_marquee_layers();
     ui_marquee_stop();
     
+    #if defined(PBL_PLATFORM_APLITE)
+    static char custom_msg_buf[32];
+#else
     static char custom_msg_buf[64];
+#endif
     snprintf(custom_msg_buf, sizeof(custom_msg_buf), "%s", msg);
     
     text_layer_set_text(s_msg_layer, custom_msg_buf);
@@ -172,7 +176,11 @@ void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {
     create_marquee_layers();
     ui_marquee_stop();
     
+    #if defined(PBL_PLATFORM_APLITE)
+    static char msg_buf[32];
+#else
     static char msg_buf[64];
+#endif
     if (s_current_app_state == 0) {
         snprintf(msg_buf, sizeof(msg_buf), "PRESS [UP] TO START OR SET UP ON PHONE ...");
     } else if (s_current_app_state == 1) {

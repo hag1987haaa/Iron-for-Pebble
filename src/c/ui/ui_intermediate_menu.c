@@ -7,15 +7,17 @@ static int s_intermediate_idx = 0;
 static GColor s_current_bg, s_current_fg;
 
 #if defined(PBL_COLOR)
-#define INTERMEDIATE_MENU_COUNT 2
+#define INTERMEDIATE_MENU_COUNT 3
 static const char* const s_menu_labels[INTERMEDIATE_MENU_COUNT] = {
     "Activity Type",
+    "Courses",
     "Custom Color"
 };
 #else
-#define INTERMEDIATE_MENU_COUNT 1
+#define INTERMEDIATE_MENU_COUNT 2
 static const char* const s_menu_labels[INTERMEDIATE_MENU_COUNT] = {
-    "Activity Type"
+    "Activity Type",
+    "Courses"
 };
 #endif
 
@@ -29,9 +31,9 @@ static void intermediate_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_text_color(ctx, s_current_fg);
     graphics_draw_text(ctx, "SETTINGS", fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(0, 0, b.size.w, text_h), 0, GTextAlignmentCenter, NULL);
     
-    int item_h = 24;
-    int spacing = 4;
-    int oy = text_h + 4;
+    int item_h = 20;
+    int spacing = 3;
+    int oy = text_h + 2;
     
     for (int i = 0; i < INTERMEDIATE_MENU_COUNT; i++) {
         if (s_intermediate_idx == i) {

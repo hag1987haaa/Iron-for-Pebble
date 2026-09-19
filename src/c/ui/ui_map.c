@@ -6,7 +6,7 @@ static GColor s_current_bg, s_current_fg;
 
 // RLEマップデータバッファ
 #if defined(PBL_PLATFORM_APLITE)
-#define MAX_MAP_RLE_SIZE 2048
+#define MAX_MAP_RLE_SIZE 256
 #else
 #define MAX_MAP_RLE_SIZE 8192
 #endif

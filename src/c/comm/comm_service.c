@@ -124,6 +124,16 @@ void comm_service_request_sync(void) {
     }
 }
 
+void comm_service_send_course_toggle(bool is_enabled, const char *course_name) {
+    DictionaryIterator *iter;
+    if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%d,%s", is_enabled ? 1 : 0, course_name ? course_name : "");
+        dict_write_cstring(iter, MESSAGE_KEY_KEY_COURSES_DATA, buf);
+        app_message_outbox_send();
+    }
+}
+
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
     Tuple *t = dict_read_first(iterator);
     bool should_update_ui = false;
@@ -235,7 +245,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         }
         else if (t->key == MESSAGE_KEY_KEY_COURSES_DATA) {
             const char *raw_courses = t->value->cstring;
-            if (raw_courses && *raw_courses) {
+            if (raw_courses) {
                 ui_course_picker_parse_and_set(raw_courses);
                 should_update_ui = true;
             }

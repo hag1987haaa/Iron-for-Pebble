@@ -60,7 +60,7 @@ typedef enum {
 #define PK_COURSES_DATA 63
 
 #if defined(PBL_PLATFORM_APLITE)
-#define MAX_COURSES 10
+#define MAX_COURSES 2
 #else
 #define MAX_COURSES 20
 #endif
@@ -85,8 +85,13 @@ typedef enum {
 
 extern const char* const ACTIVITY_NAMES[ACTIVITY_COUNT];
 
+#if defined(PBL_PLATFORM_APLITE)
+#define MAX_MID_PAGES 4
+#define MAX_LOWER_PAGES 4
+#else
 #define MAX_MID_PAGES 15
 #define MAX_LOWER_PAGES 15
+#endif
 
 typedef struct {
     int id;            // 固有ID (1〜99: テキスト項目, 100〜: グラフ項目, 0: DETAIL)
@@ -146,4 +151,4 @@ static inline bool app_is_numeric_string(const char *str) {
     return true;
 }
 
-#define APP_VERSION_STR "v1.3.4"
+#define APP_VERSION_STR "v1.3.5"

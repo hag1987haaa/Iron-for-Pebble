@@ -1,3 +1,4 @@
+#include "../comm/comm_service.h"
 #include "ui_course_picker.h"
 #include <string.h>
 
@@ -7,20 +8,21 @@ static TextLayer *s_marquee_text_layer = NULL;
 static AppTimer *s_marquee_timer = NULL;
 
 static bool s_is_course_picking = false;
-static int s_selected_course_idx = 0;
+static int8_t s_selected_course_idx = 0;
 static GColor s_current_bg, s_current_fg;
 
 static CourseItem s_courses[MAX_COURSES];
-static int s_course_count = 0;
+static int8_t s_course_count = 0;
 
-static int s_marquee_offset_x = 0;
-static int s_marquee_text_width = 0;
-static int s_marquee_container_width = 0;
-static int s_marquee_pause_counter = 0;
+static int16_t s_marquee_offset_x = 0;
+static int16_t s_marquee_text_width = 0;
+static int16_t s_marquee_container_width = 0;
+static int8_t s_marquee_pause_counter = 0;
+static int8_t s_marquee_dir = 1; // 1: 左へスクロール, -1: 右へ戻る
 
 #define MARQUEE_SPEED_PX 1
 #define MARQUEE_INTERVAL_MS 40
-#define MARQUEE_PAUSE_TICKS 35 // 約 1.4秒ポーズ
+#define MARQUEE_PAUSE_TICKS 30 // 約1.2秒ポーズ
 
 static void stop_marquee(void) {
     if (s_marquee_timer) {
@@ -29,11 +31,12 @@ static void stop_marquee(void) {
     }
     s_marquee_offset_x = 0;
     s_marquee_pause_counter = 0;
+    s_marquee_dir = 1;
 }
 
 static void marquee_timer_callback(void *context) {
     s_marquee_timer = NULL;
-    if (!s_is_course_picking || !s_marquee_text_layer) return;
+    if (!s_is_course_picking || !s_marquee_text_layer || !s_marquee_container_layer) return;
 
     if (s_marquee_pause_counter > 0) {
         s_marquee_pause_counter--;
@@ -41,13 +44,27 @@ static void marquee_timer_callback(void *context) {
         return;
     }
 
-    s_marquee_offset_x += MARQUEE_SPEED_PX;
-    if (s_marquee_offset_x > s_marquee_text_width) {
-        s_marquee_offset_x = 0;
-        s_marquee_pause_counter = MARQUEE_PAUSE_TICKS;
+    int max_scroll = s_marquee_text_width - s_marquee_container_width;
+    if (max_scroll <= 0) return;
+
+    if (s_marquee_dir > 0) {
+        s_marquee_offset_x += MARQUEE_SPEED_PX;
+        if (s_marquee_offset_x >= max_scroll) {
+            s_marquee_offset_x = max_scroll;
+            s_marquee_dir = -1;
+            s_marquee_pause_counter = MARQUEE_PAUSE_TICKS;
+        }
+    } else {
+        s_marquee_offset_x -= MARQUEE_SPEED_PX;
+        if (s_marquee_offset_x <= 0) {
+            s_marquee_offset_x = 0;
+            s_marquee_dir = 1;
+            s_marquee_pause_counter = MARQUEE_PAUSE_TICKS;
+        }
     }
 
-    layer_set_bounds(text_layer_get_layer(s_marquee_text_layer), GRect(s_marquee_offset_x, 0, s_marquee_text_width + 4, 30));
+    layer_set_frame(text_layer_get_layer(s_marquee_text_layer), GRect(-s_marquee_offset_x, 0, s_marquee_text_width + 10, 28));
+    layer_mark_dirty(s_marquee_container_layer);
 
     s_marquee_timer = app_timer_register(MARQUEE_INTERVAL_MS, marquee_timer_callback, NULL);
 }
@@ -61,15 +78,14 @@ static void update_marquee_content(void) {
 
     GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
     GSize size = graphics_text_layout_get_content_size(
-        name, font, GRect(0, 0, 600, 30), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft
+        name, font, GRect(0, 0, 1000, 30), GTextOverflowModeWordWrap, GTextAlignmentLeft
     );
-    s_marquee_text_width = size.w;
+    s_marquee_text_width = size.w + 8;
 
-    layer_set_frame(text_layer_get_layer(s_marquee_text_layer), GRect(0, 0, s_marquee_text_width + 4, 30));
-    layer_set_bounds(text_layer_get_layer(s_marquee_text_layer), GRect(0, 0, s_marquee_text_width + 4, 30));
+    layer_set_frame(text_layer_get_layer(s_marquee_text_layer), GRect(0, 0, s_marquee_text_width + 10, 28));
+    if (s_marquee_container_layer) layer_mark_dirty(s_marquee_container_layer);
 
     if (s_marquee_text_width > s_marquee_container_width) {
-        // 幅を超える場合のみ、少し待ってからマーキーアニメーション開始
         s_marquee_pause_counter = MARQUEE_PAUSE_TICKS;
         s_marquee_timer = app_timer_register(MARQUEE_INTERVAL_MS, marquee_timer_callback, NULL);
     }
@@ -127,7 +143,18 @@ void ui_course_picker_set_course(int idx, int id, const char *name, bool is_enab
 
 // Androidからの一括区切り文字列("1,NAME1|0,NAME2...")のパース＆一括保存
 void ui_course_picker_parse_and_set(const char *data_str) {
-    if (!data_str || !*data_str) return;
+    if (!data_str) return;
+
+    if (*data_str == '\0') {
+        s_course_count = 0;
+        s_selected_course_idx = 0;
+        ui_course_picker_save();
+        if (s_is_course_picking) {
+            update_marquee_content();
+            if (s_course_picker_layer) layer_mark_dirty(s_course_picker_layer);
+        }
+        return;
+    }
 
     const char *ptr = data_str;
     char token[32];
@@ -179,20 +206,27 @@ static void course_picker_update_proc(Layer *layer, GContext *ctx) {
         return;
     }
 
-    int prev_idx = (s_selected_course_idx - 1 + s_course_count) % s_course_count;
-    int next_idx = (s_selected_course_idx + 1) % s_course_count;
-
     char buf[32];
-
-    // 1. 前の項目
     int prev_y = text_h + 3;
-    graphics_context_set_text_color(ctx, s_current_fg);
-    snprintf(buf, sizeof(buf), "%s %s", s_courses[prev_idx].is_enabled ? "[X]" : "[ ]", s_courses[prev_idx].name);
-    graphics_draw_text(ctx, buf, fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(4, prev_y, b.size.w - 8, 20), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-
-    // 2. 選択中の項目（背景ハイライト矩形）
     int sel_box_y = prev_y + 21;
     int sel_box_h = 32;
+    int next_y = sel_box_y + sel_box_h + 3;
+
+    // 1. 前の項目（コースが3つ以上ある場合、または2つで選択位置が1の場合のみ表示）
+    int prev_idx = -1;
+    if (s_course_count >= 3) {
+        prev_idx = (s_selected_course_idx - 1 + s_course_count) % s_course_count;
+    } else if (s_course_count == 2 && s_selected_course_idx == 1) {
+        prev_idx = 0;
+    }
+
+    if (prev_idx >= 0) {
+        graphics_context_set_text_color(ctx, s_current_fg);
+        snprintf(buf, sizeof(buf), "%s %s", s_courses[prev_idx].is_enabled ? "[X]" : "[ ]", s_courses[prev_idx].name);
+        graphics_draw_text(ctx, buf, fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(4, prev_y, b.size.w - 8, 20), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+    }
+
+    // 2. 選択中の項目（背景ハイライト矩形）
     graphics_context_set_fill_color(ctx, s_current_fg);
     graphics_fill_rect(ctx, GRect(2, sel_box_y, b.size.w - 4, sel_box_h), 4, GCornersAll);
 
@@ -201,11 +235,19 @@ static void course_picker_update_proc(Layer *layer, GContext *ctx) {
     const char *check_str = s_courses[s_selected_course_idx].is_enabled ? "[X]" : "[ ]";
     graphics_draw_text(ctx, check_str, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(6, sel_box_y + 2, 26, 28), 0, GTextAlignmentLeft, NULL);
 
-    // 3. 次の項目
-    int next_y = sel_box_y + sel_box_h + 3;
-    graphics_context_set_text_color(ctx, s_current_fg);
-    snprintf(buf, sizeof(buf), "%s %s", s_courses[next_idx].is_enabled ? "[X]" : "[ ]", s_courses[next_idx].name);
-    graphics_draw_text(ctx, buf, fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(4, next_y, b.size.w - 8, 20), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+    // 3. 次の項目（コースが3つ以上ある場合、または2つで選択位置が0の場合のみ表示）
+    int next_idx = -1;
+    if (s_course_count >= 3) {
+        next_idx = (s_selected_course_idx + 1) % s_course_count;
+    } else if (s_course_count == 2 && s_selected_course_idx == 0) {
+        next_idx = 1;
+    }
+
+    if (next_idx >= 0) {
+        graphics_context_set_text_color(ctx, s_current_fg);
+        snprintf(buf, sizeof(buf), "%s %s", s_courses[next_idx].is_enabled ? "[X]" : "[ ]", s_courses[next_idx].name);
+        graphics_draw_text(ctx, buf, fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(4, next_y, b.size.w - 8, 20), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+    }
 }
 
 void ui_course_picker_create(Window *window, ActionBarLayer *action_bar, GColor main_bg, GColor main_fg) {
@@ -228,7 +270,11 @@ void ui_course_picker_create(Window *window, ActionBarLayer *action_bar, GColor 
     s_course_picker_layer = layer_create(GRect(0, h3, w, b.size.h - h3));
 #endif
     layer_set_update_proc(s_course_picker_layer, course_picker_update_proc);
-    layer_add_child(wl, s_course_picker_layer);
+    if (action_bar) {
+        layer_insert_below_sibling(s_course_picker_layer, action_bar_layer_get_layer(action_bar));
+    } else {
+        layer_add_child(wl, s_course_picker_layer);
+    }
 
     // マーキー用クリッピングコンテナの作成（左側チェックボックス 34px の右隣に配置）
     int text_h = 14;
@@ -275,14 +321,14 @@ bool ui_course_picker_is_active(void) {
 }
 
 void ui_course_picker_handle_up(void) {
-    if (s_course_count <= 0) return;
+    if (s_course_count <= 1) return;
     s_selected_course_idx = (s_selected_course_idx - 1 + s_course_count) % s_course_count;
     update_marquee_content();
     if (s_course_picker_layer) layer_mark_dirty(s_course_picker_layer);
 }
 
 void ui_course_picker_handle_down(void) {
-    if (s_course_count <= 0) return;
+    if (s_course_count <= 1) return;
     s_selected_course_idx = (s_selected_course_idx + 1) % s_course_count;
     update_marquee_content();
     if (s_course_picker_layer) layer_mark_dirty(s_course_picker_layer);
@@ -292,5 +338,15 @@ void ui_course_picker_handle_select(void) {
     if (s_course_count <= 0) return;
     s_courses[s_selected_course_idx].is_enabled = !s_courses[s_selected_course_idx].is_enabled;
     ui_course_picker_save();
+    if (s_course_picker_layer) layer_mark_dirty(s_course_picker_layer);
+    comm_service_send_course_toggle(s_courses[s_selected_course_idx].is_enabled, s_courses[s_selected_course_idx].name);
+}
+
+void ui_course_picker_update_colors(GColor main_bg, GColor main_fg) {
+    s_current_bg = main_bg;
+    s_current_fg = main_fg;
+    if (s_marquee_text_layer) {
+        text_layer_set_text_color(s_marquee_text_layer, s_current_bg);
+    }
     if (s_course_picker_layer) layer_mark_dirty(s_course_picker_layer);
 }

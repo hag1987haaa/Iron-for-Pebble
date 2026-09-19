@@ -180,6 +180,14 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
         return;
     }
 #endif
+    if (ui_intermediate_menu_is_active() && s_action_bar) {
+        ui_intermediate_menu_handle_up();
+        return;
+    }
+    if (ui_course_picker_is_active() && s_action_bar) {
+        ui_course_picker_handle_up();
+        return;
+    }
     if (ui_activity_picker_is_active() && s_action_bar) {
         ui_activity_picker_handle_up();
         return;
@@ -230,19 +238,22 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         vibes_short_pulse();
         return;
     }
-#if defined(PBL_COLOR)
+    if (ui_course_picker_is_active()) {
+        ui_course_picker_handle_select();
+        vibes_short_pulse();
+        return;
+    }
     if (ui_intermediate_menu_is_active() && s_action_bar) {
         int chosen = ui_intermediate_menu_get_selected_idx();
         ui_intermediate_menu_destroy();
-#if defined(PBL_COLOR)
         if (chosen == 0) {
             ui_activity_picker_create(s_main_window, s_action_bar, s_current_activity, s_current_main_bg, s_current_main_fg);
         } else if (chosen == 1) {
-            ui_color_picker_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
+            ui_course_picker_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
         }
-#else
-        if (chosen == 0) {
-            ui_activity_picker_create(s_main_window, s_action_bar, s_current_activity, s_current_main_bg, s_current_main_fg);
+#if defined(PBL_COLOR)
+        else if (chosen == 2) {
+            ui_color_picker_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
         }
 #endif
         if (s_action_bar && s_main_window) {
@@ -253,7 +264,6 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         vibes_short_pulse();
         return;
     }
-#endif
     if (s_ignore_single_click) return;
 
     if (s_app_state == 3) {
@@ -275,11 +285,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     }
 
     if (s_app_state <= 2) {
-#if defined(PBL_COLOR)
         ui_intermediate_menu_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
-#else
-        ui_activity_picker_create(s_main_window, s_action_bar, s_current_activity, s_current_main_bg, s_current_main_fg);
-#endif
         if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, true);
         if (s_graph_layer) layer_set_hidden(s_graph_layer, true);
         if (s_action_bar && s_main_window) {
@@ -311,6 +317,14 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
         return;
     }
 #endif
+    if (ui_intermediate_menu_is_active() && s_action_bar) {
+        ui_intermediate_menu_handle_down();
+        return;
+    }
+    if (ui_course_picker_is_active() && s_action_bar) {
+        ui_course_picker_handle_down();
+        return;
+    }
     if (ui_activity_picker_is_active() && s_action_bar) {
         ui_activity_picker_handle_down();
         return;
@@ -343,9 +357,9 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void generic_long_click_down_handler(ClickRecognizerRef recognizer, void *context) {
-    bool ignore = ui_activity_picker_is_active();
+    bool ignore = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
-    ignore = ignore || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
+    ignore = ignore || ui_color_picker_is_active();
 #endif
     if (ignore) return;
     trigger_ignore_single_click();
@@ -355,9 +369,9 @@ static void generic_long_click_down_handler(ClickRecognizerRef recognizer, void 
 
 static void up_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_map_is_active()) return;
-    bool ignore = ui_activity_picker_is_active();
+    bool ignore = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
-    ignore = ignore || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
+    ignore = ignore || ui_color_picker_is_active();
 #endif
     if (ignore) return;
     trigger_ignore_single_click();
@@ -374,9 +388,9 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
         // マップ表示中の長押しリセットは廃止
         return;
     }
-    bool ignore = ui_activity_picker_is_active();
+    bool ignore = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
-    ignore = ignore || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
+    ignore = ignore || ui_color_picker_is_active();
 #endif
     if (ignore) return;
     trigger_ignore_single_click();
@@ -390,9 +404,9 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
 
 static void down_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_map_is_active()) return;
-    bool ignore = ui_activity_picker_is_active();
+    bool ignore = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
-    ignore = ignore || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
+    ignore = ignore || ui_color_picker_is_active();
 #endif
     if (ignore) return;
     trigger_ignore_single_click();
@@ -418,10 +432,35 @@ static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
         vibes_short_pulse();
         return;
     }
+    if (ui_course_picker_is_active() && s_action_bar) {
+        ui_course_picker_destroy();
+        ui_intermediate_menu_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
+        ui_intermediate_menu_set_selected_idx(1);
+        if (s_action_bar && s_main_window) {
+            action_bar_layer_remove_from_window(s_action_bar);
+            action_bar_layer_add_to_window(s_action_bar, s_main_window);
+        }
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
 #if defined(PBL_COLOR)
     if (ui_color_picker_is_active() && s_action_bar) {
         ui_color_picker_set_selected_idx(s_selected_color_idx);
         ui_color_picker_destroy();
+        ui_intermediate_menu_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
+        ui_intermediate_menu_set_selected_idx(2);
+        if (s_action_bar && s_main_window) {
+            action_bar_layer_remove_from_window(s_action_bar);
+            action_bar_layer_add_to_window(s_action_bar, s_main_window);
+        }
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
+#endif
+    if (ui_course_picker_is_active() && s_action_bar) {
+        ui_course_picker_destroy();
         ui_intermediate_menu_create(s_main_window, s_action_bar, s_current_main_bg, s_current_main_fg);
         ui_intermediate_menu_set_selected_idx(1);
         if (s_action_bar && s_main_window) {
@@ -457,21 +496,6 @@ static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
         vibes_short_pulse();
         return;
     }
-#else
-    if (ui_activity_picker_is_active() && s_action_bar) {
-        ui_activity_picker_set_preview_activity(s_current_activity);
-        ui_activity_picker_destroy();
-        if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, false);
-        if (s_graph_layer) layer_set_hidden(s_graph_layer, false);
-        if (s_action_bar && s_main_window) {
-            action_bar_layer_remove_from_window(s_action_bar);
-            action_bar_layer_add_to_window(s_action_bar, s_main_window);
-        }
-        update_ui_state();
-        vibes_short_pulse();
-        return;
-    }
-#endif
 
     // 最上位層（メイン待機画面）：ウォッチフェイス画面に戻る（アプリ終了）
     window_stack_pop(true);
@@ -488,9 +512,9 @@ static void click_config_provider(void *context) {
         return;
     }
 
-    bool custom_clicks = ui_activity_picker_is_active();
+    bool custom_clicks = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
-    custom_clicks = custom_clicks || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
+    custom_clicks = custom_clicks || ui_color_picker_is_active();
 #endif
     if (custom_clicks) {
         window_single_repeating_click_subscribe(BUTTON_ID_UP, 100, up_click_handler);
@@ -571,6 +595,7 @@ static void update_ui_state(void) {
     }
     
     bool hide_pickers = ui_activity_picker_is_active() || 
+                        ui_course_picker_is_active() || 
                         ui_intermediate_menu_is_active() || 
                         ui_map_is_active();
 #if defined(PBL_COLOR)
@@ -661,21 +686,17 @@ static void update_ui_state(void) {
             bool use_black_icons = gcolor_equal(gcolor_legible_over(pc), GColorBlack);
             load_action_icons(use_black_icons);
             
-            bool icon_cond = ui_activity_picker_is_active();
+            bool icon_cond = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
-            icon_cond = icon_cond || ui_color_picker_is_active() || ui_intermediate_menu_is_active();
+            icon_cond = icon_cond || ui_color_picker_is_active();
 #endif
             if (icon_cond) {
                 action_bar_layer_set_icon(s_action_bar, BUTTON_ID_UP, s_icon_up);
-#if defined(PBL_COLOR)
-                if (ui_intermediate_menu_is_active()) {
+                if (ui_intermediate_menu_is_active() || ui_course_picker_is_active()) {
                     action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_check);
                 } else {
                     action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_save);
                 }
-#else
-                action_bar_layer_set_icon(s_action_bar, BUTTON_ID_SELECT, s_icon_save);
-#endif
                 action_bar_layer_set_icon(s_action_bar, BUTTON_ID_DOWN, s_icon_down);
             } else {
                 if (s_app_state < 3) {
@@ -727,9 +748,10 @@ static void update_ui_state(void) {
 
 #if defined(PBL_COLOR)
     if (ui_color_picker_is_active()) ui_color_picker_update_colors(s_current_main_bg, s_current_main_fg);
-    if (ui_intermediate_menu_is_active()) ui_intermediate_menu_update_colors(s_current_main_bg, s_current_main_fg);
 #endif
+    if (ui_intermediate_menu_is_active()) ui_intermediate_menu_update_colors(s_current_main_bg, s_current_main_fg);
     if (ui_activity_picker_is_active()) ui_activity_picker_update_colors(s_current_main_bg, s_current_main_fg);
+    if (ui_course_picker_is_active()) ui_course_picker_update_colors(s_current_main_bg, s_current_main_fg);
 }
 
 /* ==========================================================
@@ -1252,9 +1274,10 @@ static void main_window_unload(Window *window) {
     }
 
     ui_activity_picker_destroy();
+    ui_course_picker_destroy();
+    ui_intermediate_menu_destroy();
 #if defined(PBL_COLOR)
     ui_color_picker_destroy();
-    ui_intermediate_menu_destroy();
 #endif
 
     if (s_time_hour_layer) text_layer_destroy(s_time_hour_layer);

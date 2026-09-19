@@ -13,6 +13,7 @@ void ui_course_picker_save(void);
 void ui_course_picker_create(Window *window, ActionBarLayer *action_bar, GColor main_bg, GColor main_fg);
 void ui_course_picker_destroy(void);
 bool ui_course_picker_is_active(void);
+void ui_course_picker_update_colors(GColor main_bg, GColor main_fg);
 
 // 操作ハンドラ
 void ui_course_picker_handle_up(void);

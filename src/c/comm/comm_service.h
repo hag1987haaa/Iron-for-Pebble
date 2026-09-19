@@ -20,6 +20,7 @@ void comm_service_send_lower_id(int lower_id);
 void comm_service_send_health_data(bool send_steps, bool send_hr, int steps, int hr);
 int32_t comm_service_get_hr_interval_setting(void);
 void comm_service_request_sync(void);
+void comm_service_send_course_toggle(bool is_enabled, const char *course_name);
 
 void comm_service_set_ui_buffers(
     char *time_hour_buf, char *time_min_buf, char *time_sec_buf,
