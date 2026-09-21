@@ -22,6 +22,82 @@ static bool s_has_hr_sensor = false;
 static int32_t s_hr_interval_setting = 0;
 static bool s_map_open_requested = false;
 
+
+static uint32_t s_current_elapsed_seconds = 0;
+static bool s_map_transfer_in_progress = false;
+
+static inline void format_2digits(char *buf, uint32_t val) {
+    buf[0] = '0' + (char)((val / 10) % 10);
+    buf[1] = '0' + (char)(val % 10);
+    buf[2] = '\0';
+}
+
+static uint32_t parse_formatted_time(const char *raw) {
+    if (!raw) return 0;
+    uint32_t v1 = 0, v2 = 0, v3 = 0;
+    int colons = 0;
+    const char *p = raw;
+    while (*p) {
+        if (*p == ':') {
+            colons++;
+        } else if (*p >= '0' && *p <= '9') {
+            if (colons == 0) v1 = v1 * 10 + (uint32_t)(*p - '0');
+            else if (colons == 1) v2 = v2 * 10 + (uint32_t)(*p - '0');
+            else if (colons == 2) v3 = v3 * 10 + (uint32_t)(*p - '0');
+        }
+        p++;
+    }
+    if (colons >= 2) {
+        return v1 * 3600 + v2 * 60 + v3;
+    } else if (colons == 1) {
+        return v1 * 60 + v2;
+    }
+    return 0;
+}
+
+void comm_service_format_time_to_buffers(uint32_t total_sec) {
+    uint32_t h = total_sec / 3600;
+    uint32_t m = (total_sec % 3600) / 60;
+    uint32_t s = total_sec % 60;
+
+    if (h > 0) {
+        if (s_is_long_workout_ptr) *s_is_long_workout_ptr = true;
+        if (s_time_hour_buf) {
+            if (h >= 10) {
+                format_2digits(s_time_hour_buf, h);
+            } else {
+                s_time_hour_buf[0] = '0' + (char)h;
+                s_time_hour_buf[1] = '\0';
+            }
+        }
+        if (s_time_min_buf) format_2digits(s_time_min_buf, m);
+        if (s_time_sec_buf) format_2digits(s_time_sec_buf, s);
+    } else {
+        if (s_is_long_workout_ptr) *s_is_long_workout_ptr = false;
+        if (s_time_hour_buf) s_time_hour_buf[0] = '\0';
+        if (s_time_min_buf) format_2digits(s_time_min_buf, m);
+        if (s_time_sec_buf) format_2digits(s_time_sec_buf, s);
+    }
+}
+
+bool comm_service_is_map_transfer_in_progress(void) {
+    return s_map_transfer_in_progress;
+}
+
+void comm_service_increment_elapsed_seconds(void) {
+    s_current_elapsed_seconds++;
+    comm_service_format_time_to_buffers(s_current_elapsed_seconds);
+}
+
+uint32_t comm_service_get_elapsed_seconds(void) {
+    return s_current_elapsed_seconds;
+}
+
+void comm_service_reset_elapsed_seconds(void) {
+    s_current_elapsed_seconds = 0;
+    comm_service_format_time_to_buffers(0);
+}
+
 bool comm_service_is_map_open_requested(void) { return s_map_open_requested; }
 void comm_service_clear_map_open_request(void) { s_map_open_requested = false; }
 
@@ -152,32 +228,28 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             if (*s_app_state_ptr != new_state) {
                 *s_app_state_ptr = new_state;
                 if (s_is_paused_ptr) *s_is_paused_ptr = (*s_app_state_ptr == 4 || *s_app_state_ptr == 5 || *s_app_state_ptr == 6);
+                if (new_state == 0 || new_state == 1 || new_state == 2) {
+                    comm_service_reset_elapsed_seconds();
+                    s_map_transfer_in_progress = false;
+                }
                 should_update_ui = true;
             }
         }
         else if (t->key == MESSAGE_KEY_TIME) {
             const char *raw = t->value->cstring;
             if (raw && strlen(raw) >= 5 && s_time_min_buf && s_time_sec_buf) {
-                if (strlen(raw) >= 7 && s_time_hour_buf && s_is_long_workout_ptr) {
-                    *s_is_long_workout_ptr = true;
-                    s_time_hour_buf[0] = raw[0];
-                    s_time_hour_buf[1] = '\0';
-                    s_time_min_buf[0] = raw[2];
-                    s_time_min_buf[1] = raw[3];
-                    s_time_min_buf[2] = '\0';
-                    s_time_sec_buf[0] = raw[5];
-                    s_time_sec_buf[1] = raw[6];
-                    s_time_sec_buf[2] = '\0';
-                } else {
-                    if (s_is_long_workout_ptr) *s_is_long_workout_ptr = false;
-                    s_time_min_buf[0] = raw[0];
-                    s_time_min_buf[1] = raw[1];
-                    s_time_min_buf[2] = '\0';
-                    s_time_sec_buf[0] = raw[3];
-                    s_time_sec_buf[1] = raw[4];
-                    s_time_sec_buf[2] = '\0';
+                uint32_t rx_sec = parse_formatted_time(raw);
+                uint8_t state = s_app_state_ptr ? *s_app_state_ptr : 0;
+                
+                // 逆行防止ガード:
+                // 計測中(3)の場合、スマホ時刻が表示秒数以上の時のみ受け入れる。
+                // （過去パケットや遅延パケットで時計が戻る現象を完全排除）
+                // ただし、状態が計測中以外、またはスマホ時刻との差が5秒以上（リセットや再開等）の場合は強制同期
+                if (state != 3 || rx_sec >= s_current_elapsed_seconds || (s_current_elapsed_seconds - rx_sec > 5)) {
+                    s_current_elapsed_seconds = rx_sec;
+                    comm_service_format_time_to_buffers(s_current_elapsed_seconds);
+                    should_update_ui = true;
                 }
-                should_update_ui = true;
             }
         }
         else if (t->key == MESSAGE_KEY_DISTANCE) {
@@ -241,6 +313,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             int c_idx = t_idx ? (int)app_get_int_from_tuple(t_idx) : 0;
             int c_total = t_total ? (int)app_get_int_from_tuple(t_total) : 1;
             ui_map_update_data(t->value->data, t->length, c_idx, c_total);
+            if (c_idx == 0) {
+                s_map_transfer_in_progress = true;
+            }
+            if (c_idx == c_total - 1) {
+                s_map_transfer_in_progress = false;
+            }
             should_update_ui = true;
         }
         else if (t->key == MESSAGE_KEY_KEY_COURSES_DATA) {

@@ -265,8 +265,7 @@ void ui_map_create(Window *window, GColor main_bg, GColor main_fg) {
     s_current_bg = main_bg;
     s_current_fg = main_fg;
     s_is_map_active = true;
-    s_has_received_data = false;
-    s_map_rle_len = 0;
+    // 背景受信済みのデータ(s_has_received_data)があれば破棄せず即座に描画
 
     Layer *wl = window_get_root_layer(window);
     GRect b = layer_get_bounds(wl);

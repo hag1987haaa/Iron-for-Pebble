@@ -86,11 +86,13 @@ typedef enum {
 extern const char* const ACTIVITY_NAMES[ACTIVITY_COUNT];
 
 #if defined(PBL_PLATFORM_APLITE)
-#define MAX_MID_PAGES 4
-#define MAX_LOWER_PAGES 4
+#define MAX_MID_PAGES 2
+#define MAX_LOWER_PAGES 2
+#define MAX_GRAPH_DATA 20
 #else
 #define MAX_MID_PAGES 15
 #define MAX_LOWER_PAGES 15
+#define MAX_GRAPH_DATA 45
 #endif
 
 typedef struct {
@@ -103,8 +105,6 @@ typedef struct {
 
 typedef MetricPageData MidPageData;
 typedef MetricPageData LowerPageData;
-
-#define MAX_GRAPH_DATA 45
 
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
 #define SWIPE_MIN_DIST_PX 30      
@@ -151,4 +151,4 @@ static inline bool app_is_numeric_string(const char *str) {
     return true;
 }
 
-#define APP_VERSION_STR "v1.3.5"
+#define APP_VERSION_STR "v1.3.6"

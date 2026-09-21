@@ -22,6 +22,13 @@ int32_t comm_service_get_hr_interval_setting(void);
 void comm_service_request_sync(void);
 void comm_service_send_course_toggle(bool is_enabled, const char *course_name);
 
+
+bool comm_service_is_map_transfer_in_progress(void);
+void comm_service_increment_elapsed_seconds(void);
+uint32_t comm_service_get_elapsed_seconds(void);
+void comm_service_reset_elapsed_seconds(void);
+void comm_service_format_time_to_buffers(uint32_t total_sec);
+
 void comm_service_set_ui_buffers(
     char *time_hour_buf, char *time_min_buf, char *time_sec_buf,
     char *dist_buf, char *hr_buf, char *step_buf,

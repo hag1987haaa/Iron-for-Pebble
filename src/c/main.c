@@ -71,46 +71,46 @@ static void trigger_ignore_single_click(void) {
     s_ignore_single_click_timer = app_timer_register(600, reset_ignore_single_click_callback, NULL);
 }
 
+static GBitmap ** const s_action_icon_ptrs[] = {
+    &s_icon_play, &s_icon_pause, &s_icon_stop, &s_icon_check, &s_icon_trash,
+    &s_icon_up, &s_icon_down, &s_icon_graph, &s_icon_save, &s_icon_setting
+};
+
+static const uint32_t s_icon_res_black[] = {
+    RESOURCE_ID_IMAGE_PLAY_BLACK, RESOURCE_ID_IMAGE_PAUSE_BLACK, RESOURCE_ID_IMAGE_STOP_BLACK,
+    RESOURCE_ID_IMAGE_CHECK_BLACK, RESOURCE_ID_IMAGE_TRASH_BLACK, RESOURCE_ID_IMAGE_UP_BLACK,
+    RESOURCE_ID_IMAGE_DOWN_BLACK, RESOURCE_ID_IMAGE_GRAPH_BLACK, RESOURCE_ID_IMAGE_SAVE_BLACK,
+    RESOURCE_ID_IMAGE_SETTING_BLACK
+};
+
+static const uint32_t s_icon_res_white[] = {
+    RESOURCE_ID_IMAGE_PLAY_WHITE, RESOURCE_ID_IMAGE_PAUSE_WHITE, RESOURCE_ID_IMAGE_STOP_WHITE,
+    RESOURCE_ID_IMAGE_CHECK_WHITE, RESOURCE_ID_IMAGE_TRASH_WHITE, RESOURCE_ID_IMAGE_UP_WHITE,
+    RESOURCE_ID_IMAGE_DOWN_WHITE, RESOURCE_ID_IMAGE_GRAPH_WHITE, RESOURCE_ID_IMAGE_SAVE_WHITE,
+    RESOURCE_ID_IMAGE_SETTING_WHITE
+};
+
+#define NUM_ACTION_ICONS (int)(sizeof(s_action_icon_ptrs) / sizeof(s_action_icon_ptrs[0]))
+
+static void destroy_action_icons(void) {
+    if (!s_icons_loaded) return;
+    for (int i = 0; i < NUM_ACTION_ICONS; i++) {
+        if (*s_action_icon_ptrs[i]) {
+            gbitmap_destroy(*s_action_icon_ptrs[i]);
+            *s_action_icon_ptrs[i] = NULL;
+        }
+    }
+    s_icons_loaded = false;
+}
+
 static void load_action_icons(bool is_black) {
     if (s_icons_loaded && s_current_icon_color_is_black == is_black) return;
-    
-    if (s_icons_loaded) {
-        if (s_icon_play) gbitmap_destroy(s_icon_play);
-        if (s_icon_pause) gbitmap_destroy(s_icon_pause);
-        if (s_icon_stop) gbitmap_destroy(s_icon_stop);
-        if (s_icon_check) gbitmap_destroy(s_icon_check);
-        if (s_icon_trash) gbitmap_destroy(s_icon_trash);
-        if (s_icon_up) gbitmap_destroy(s_icon_up);
-        if (s_icon_down) gbitmap_destroy(s_icon_down);
-        if (s_icon_graph) gbitmap_destroy(s_icon_graph);
-        if (s_icon_save) gbitmap_destroy(s_icon_save);
-        if (s_icon_setting) gbitmap_destroy(s_icon_setting);
+    destroy_action_icons();
+
+    const uint32_t *res_ids = is_black ? s_icon_res_black : s_icon_res_white;
+    for (int i = 0; i < NUM_ACTION_ICONS; i++) {
+        *s_action_icon_ptrs[i] = gbitmap_create_with_resource(res_ids[i]);
     }
-    
-    if (is_black) {
-        s_icon_play = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PLAY_BLACK);
-        s_icon_pause = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PAUSE_BLACK);
-        s_icon_stop = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_STOP_BLACK);
-        s_icon_check = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_BLACK);
-        s_icon_trash = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TRASH_BLACK);
-        s_icon_up = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_UP_BLACK);
-        s_icon_down = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_DOWN_BLACK);
-        s_icon_graph = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_GRAPH_BLACK);
-        s_icon_save = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SAVE_BLACK);
-        s_icon_setting = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SETTING_BLACK);
-    } else {
-        s_icon_play = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PLAY_WHITE);
-        s_icon_pause = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PAUSE_WHITE);
-        s_icon_stop = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_STOP_WHITE);
-        s_icon_check = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_WHITE);
-        s_icon_trash = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_TRASH_WHITE);
-        s_icon_up = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_UP_WHITE);
-        s_icon_down = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_DOWN_WHITE);
-        s_icon_graph = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_GRAPH_WHITE);
-        s_icon_save = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SAVE_WHITE);
-        s_icon_setting = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_SETTING_WHITE);
-    }
-    
     s_current_icon_color_is_black = is_black;
     s_icons_loaded = true;
 }
@@ -836,6 +836,16 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         }
         s_seconds_counter++;
 
+        // マップ転送中、スマホからの時間送信が一時スキップされるため、
+        // ウォッチ側で毎秒 +1秒 補間カウントアップして表示を滑らかに維持する
+        if (comm_service_is_map_transfer_in_progress()) {
+            comm_service_increment_elapsed_seconds();
+            if (s_time_sec_layer) text_layer_set_text(s_time_sec_layer, s_time_sec_buf);
+            if (s_time_min_layer) text_layer_set_text(s_time_min_layer, s_time_min_buf);
+            if (s_time_hour_layer) text_layer_set_text(s_time_hour_layer, s_time_hour_buf);
+            if (ui_map_is_active()) ui_map_mark_dirty();
+        }
+
 #if defined(PBL_HEALTH)
         if (s_has_hr_sensor) {
             bool should_send_steps = (s_seconds_counter % 5 == 0);
@@ -1294,18 +1304,7 @@ static void main_window_unload(Window *window) {
     if (s_graph_layer) layer_destroy(s_graph_layer);
     if (s_action_bar) action_bar_layer_destroy(s_action_bar);
     
-    if (s_icons_loaded) {
-        if (s_icon_play) gbitmap_destroy(s_icon_play);
-        if (s_icon_pause) gbitmap_destroy(s_icon_pause);
-        if (s_icon_stop) gbitmap_destroy(s_icon_stop);
-        if (s_icon_check) gbitmap_destroy(s_icon_check);
-        if (s_icon_trash) gbitmap_destroy(s_icon_trash);
-        if (s_icon_up) gbitmap_destroy(s_icon_up);
-        if (s_icon_down) gbitmap_destroy(s_icon_down);
-        if (s_icon_graph) gbitmap_destroy(s_icon_graph);
-        if (s_icon_save) gbitmap_destroy(s_icon_save);
-        if (s_icon_setting) gbitmap_destroy(s_icon_setting);
-    }
+    destroy_action_icons();
 }
 
 static void init(void) {

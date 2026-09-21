@@ -176,26 +176,22 @@ void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {
     create_marquee_layers();
     ui_marquee_stop();
     
-    #if defined(PBL_PLATFORM_APLITE)
-    static char msg_buf[32];
-#else
-    static char msg_buf[64];
-#endif
+    const char *msg = NULL;
     if (s_current_app_state == 0) {
-        snprintf(msg_buf, sizeof(msg_buf), "PRESS [UP] TO START OR SET UP ON PHONE ...");
+        msg = "PRESS [UP] TO START OR SET UP ON PHONE ...";
     } else if (s_current_app_state == 1) {
-        snprintf(msg_buf, sizeof(msg_buf), "SEARCHING GPS ...");
+        msg = "SEARCHING GPS ...";
     } else if (s_current_app_state == 2) {
-        snprintf(msg_buf, sizeof(msg_buf), "READY TO START !");
+        msg = "READY TO START !";
     } else if (s_current_app_state == 5) {
-        snprintf(msg_buf, sizeof(msg_buf), "FINISH? [UP] SAVE [DOWN] DISCARD");
+        msg = "FINISH? [UP] SAVE [DOWN] DISCARD";
     } else if (s_current_app_state == 6) {
-        snprintf(msg_buf, sizeof(msg_buf), "SAVED ! PRESS SELECT TO RESET");
+        msg = "SAVED ! PRESS SELECT TO RESET";
     } else {
         return;
     }
     
-    text_layer_set_text(s_msg_layer, msg_buf);
+    text_layer_set_text(s_msg_layer, msg);
     text_layer_set_text_color(s_msg_layer, s_current_fg);
     text_layer_set_text_alignment(s_msg_layer, GTextAlignmentLeft);
     
