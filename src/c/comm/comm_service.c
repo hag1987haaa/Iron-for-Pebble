@@ -124,12 +124,54 @@ void comm_service_set_ui_buffers(
     s_has_hr_sensor = has_hr_sensor;
 }
 
-void comm_service_send_button_event(AppEventID event_id) {
+static AppEventID s_pending_button_event = EVENT_NONE;
+static int s_pending_button_retry_count = 0;
+static AppTimer *s_button_retry_timer = NULL;
+
+static void button_retry_timer_callback(void *context);
+
+static void send_pending_button_event_internal(void) {
+    if (s_pending_button_event == EVENT_NONE) return;
+
     DictionaryIterator *iter;
-    if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
-        dict_write_int32(iter, MESSAGE_KEY_KEY_EVENT, (int32_t)event_id);
-        app_message_outbox_send();
+    AppMessageResult res = app_message_outbox_begin(&iter);
+    if (res == APP_MSG_OK) {
+        dict_write_int32(iter, MESSAGE_KEY_KEY_EVENT, (int32_t)s_pending_button_event);
+        res = app_message_outbox_send();
+        if (res == APP_MSG_OK) {
+            s_pending_button_event = EVENT_NONE;
+            s_pending_button_retry_count = 0;
+            if (s_button_retry_timer) {
+                app_timer_cancel(s_button_retry_timer);
+                s_button_retry_timer = NULL;
+            }
+            return;
+        }
     }
+
+    if (s_pending_button_retry_count < 10) {
+        s_pending_button_retry_count++;
+        if (s_button_retry_timer) {
+            app_timer_cancel(s_button_retry_timer);
+            s_button_retry_timer = NULL;
+        }
+        s_button_retry_timer = app_timer_register(150, button_retry_timer_callback, NULL);
+    } else {
+        s_pending_button_event = EVENT_NONE;
+        s_pending_button_retry_count = 0;
+        s_button_retry_timer = NULL;
+    }
+}
+
+static void button_retry_timer_callback(void *context) {
+    s_button_retry_timer = NULL;
+    send_pending_button_event_internal();
+}
+
+void comm_service_send_button_event(AppEventID event_id) {
+    s_pending_button_event = event_id;
+    s_pending_button_retry_count = 0;
+    send_pending_button_event_internal();
 }
 
 void comm_service_send_map_state(int state) {
@@ -192,11 +234,40 @@ int32_t comm_service_get_hr_interval_setting(void) {
     return s_hr_interval_setting;
 }
 
+static AppTimer *s_sync_retry_timer = NULL;
+static int s_sync_retry_count = 0;
+
+static void sync_retry_timer_callback(void *context) {
+    s_sync_retry_timer = NULL;
+    comm_service_request_sync();
+}
+
 void comm_service_request_sync(void) {
     DictionaryIterator *iter;
-    if (app_message_outbox_begin(&iter) == APP_MSG_OK) {
+    AppMessageResult res = app_message_outbox_begin(&iter);
+    if (res == APP_MSG_OK) {
         dict_write_int32(iter, MESSAGE_KEY_CMD, 5);
-        app_message_outbox_send();
+        res = app_message_outbox_send();
+        if (res == APP_MSG_OK) {
+            s_sync_retry_count = 0;
+            if (s_sync_retry_timer) {
+                app_timer_cancel(s_sync_retry_timer);
+                s_sync_retry_timer = NULL;
+            }
+            return;
+        }
+    }
+
+    if (s_sync_retry_count < 5) {
+        s_sync_retry_count++;
+        if (s_sync_retry_timer) {
+            app_timer_cancel(s_sync_retry_timer);
+            s_sync_retry_timer = NULL;
+        }
+        s_sync_retry_timer = app_timer_register(500, sync_retry_timer_callback, NULL);
+    } else {
+        s_sync_retry_count = 0;
+        s_sync_retry_timer = NULL;
     }
 }
 
@@ -354,9 +425,29 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     }
 }
 
+static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
+    if (s_pending_button_event != EVENT_NONE) {
+        send_pending_button_event_internal();
+    }
+}
+
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+    APP_LOG(APP_LOG_LEVEL_WARNING, "Outbox send failed: %d", (int)reason);
+    if (s_pending_button_event != EVENT_NONE && s_pending_button_retry_count < 10) {
+        s_pending_button_retry_count++;
+        if (s_button_retry_timer) {
+            app_timer_cancel(s_button_retry_timer);
+            s_button_retry_timer = NULL;
+        }
+        s_button_retry_timer = app_timer_register(150, button_retry_timer_callback, NULL);
+    }
+}
+
 void comm_service_init(CommServiceUIUpdateCallback ui_update_cb, CommServiceGraphDirtyCallback graph_dirty_cb) {
     s_ui_update_cb = ui_update_cb;
     s_graph_dirty_cb = graph_dirty_cb;
     app_message_register_inbox_received(inbox_received_callback);
+    app_message_register_outbox_sent(outbox_sent_callback);
+    app_message_register_outbox_failed(outbox_failed_callback);
     app_message_open(1024, 256);
 }

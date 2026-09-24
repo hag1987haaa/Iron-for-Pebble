@@ -194,6 +194,16 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     }
     if (s_ignore_single_click) return;
 
+    if (s_app_state == 0) {
+        // IDLE時にUPを押したら即座に状態1(SEARCHING GPS...)へ楽観的UI更新
+        s_app_state = 1;
+        update_ui_state();
+    } else if (s_app_state == 2) {
+        // READY時にUPを押したら即座に状態3(ACTIVE)へ楽観的UI更新
+        s_app_state = 3;
+        update_ui_state();
+    }
+
     comm_service_send_button_event(EVENT_BUTTON_UP_CLICK);
     vibes_short_pulse();
 }

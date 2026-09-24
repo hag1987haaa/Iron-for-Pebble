@@ -88,7 +88,7 @@ extern const char* const ACTIVITY_NAMES[ACTIVITY_COUNT];
 #if defined(PBL_PLATFORM_APLITE)
 #define MAX_MID_PAGES 2
 #define MAX_LOWER_PAGES 2
-#define MAX_GRAPH_DATA 20
+#define MAX_GRAPH_DATA 12
 #else
 #define MAX_MID_PAGES 15
 #define MAX_LOWER_PAGES 15
