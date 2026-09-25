@@ -151,4 +151,4 @@ static inline bool app_is_numeric_string(const char *str) {
     return true;
 }
 
-#define APP_VERSION_STR "v1.3.6"
+#define APP_VERSION_STR "v1.4.0"
