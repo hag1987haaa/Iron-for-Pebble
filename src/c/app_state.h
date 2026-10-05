@@ -31,6 +31,15 @@
 #define MESSAGE_KEY_KEY_PAN_DX 10023
 #define MESSAGE_KEY_KEY_PAN_DY 10024
 #define MESSAGE_KEY_KEY_COURSES_DATA 10025
+#define MESSAGE_KEY_KEY_ALERT_MSG 10026
+#define MESSAGE_KEY_KEY_COMPANION_TYPE 10027
+
+typedef enum {
+    COMPANION_TYPE_UNKNOWN = 0,
+    COMPANION_TYPE_ANDROID_NATIVE = 1,
+    COMPANION_TYPE_IOS_PKJS = 2,
+    COMPANION_TYPE_ANDROID_PKJS = 3
+} CompanionType;
 
 typedef enum {
     EVENT_NONE = 0,
@@ -60,7 +69,7 @@ typedef enum {
 #define PK_COURSES_DATA 63
 
 #if defined(PBL_PLATFORM_APLITE)
-#define MAX_COURSES 2
+#define MAX_COURSES 1
 #else
 #define MAX_COURSES 20
 #endif
@@ -151,4 +160,4 @@ static inline bool app_is_numeric_string(const char *str) {
     return true;
 }
 
-#define APP_VERSION_STR "v1.4.0"
+#define APP_VERSION_STR "v1.4.1"

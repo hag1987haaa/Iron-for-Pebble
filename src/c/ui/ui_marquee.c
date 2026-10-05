@@ -68,18 +68,34 @@ static void create_marquee_layers(void) {
     Layer *wl = window_get_root_layer(s_window);
     GRect b = layer_get_bounds(wl);
     
-#if defined(PBL_ROUND)
+#if defined(PBL_PLATFORM_GABBRO)
     int w = b.size.w;
-    int h = b.size.h;
-    int mid_h = (w >= 260) ? 65 : 45;
-    int upper_h = (h - mid_h) / 2;
-    s_msg_container_layer = layer_create(GRect(0, upper_h + mid_h + (w >= 260 ? 5 : 2), w, 24));
+    int container_y = 180;
+    int container_h = 38;
+    GFont marquee_font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+#elif defined(PBL_PLATFORM_CHALK)
+    int w = b.size.w;
+    int container_y = 124; // 下段中央(普段の数値位置)に配置
+    int container_h = 32;
+    GFont marquee_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+#elif defined(PBL_PLATFORM_EMERY)
+    int w = b.size.w - ACTION_BAR_WIDTH;
+    int container_y = 168;
+    int container_h = 36;
+    GFont marquee_font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+#elif defined(PBL_PLATFORM_APLITE)
+    int w = b.size.w - ACTION_BAR_WIDTH;
+    int container_y = 122;
+    int container_h = 24;
+    GFont marquee_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 #else
     int w = b.size.w - ACTION_BAR_WIDTH;
-    int h3 = b.size.h / 3;
-    s_msg_container_layer = layer_create(GRect(0, h3 * 2 + 1, w, 24));
+    int container_y = 122; // 下段中央に配置
+    int container_h = 30;
+    GFont marquee_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
 #endif
 
+    s_msg_container_layer = layer_create(GRect(0, container_y, w, container_h));
     layer_set_update_proc(s_msg_container_layer, msg_container_update_proc);
     
     if (s_action_bar) {
@@ -88,8 +104,8 @@ static void create_marquee_layers(void) {
         layer_add_child(wl, s_msg_container_layer);
     }
     
-    s_msg_layer = text_layer_create(GRect(w, -2, 450, 24));
-    text_layer_set_font(s_msg_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    s_msg_layer = text_layer_create(GRect(w, -2, 450, container_h));
+    text_layer_set_font(s_msg_layer, marquee_font);
     text_layer_set_background_color(s_msg_layer, GColorClear);
     layer_add_child(s_msg_container_layer, text_layer_get_layer(s_msg_layer));
 
@@ -140,7 +156,7 @@ void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color
     ui_marquee_stop();
     
     #if defined(PBL_PLATFORM_APLITE)
-    static char custom_msg_buf[32];
+    static char custom_msg_buf[16];
 #else
     static char custom_msg_buf[64];
 #endif
@@ -157,7 +173,7 @@ void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color
     int w = layer_get_bounds(wl).size.w - ACTION_BAR_WIDTH;
 #endif
     
-    layer_set_frame(text_layer_get_layer(s_msg_layer), GRect(0, -2, w, 24));
+    layer_set_frame(text_layer_get_layer(s_msg_layer), GRect(0, -2, w, layer_get_bounds(s_msg_container_layer).size.h));
     s_marquee_timer = app_timer_register(3000, custom_msg_timer_callback, NULL);
 }
 
@@ -176,20 +192,17 @@ void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {
     create_marquee_layers();
     ui_marquee_stop();
     
-    const char *msg = NULL;
-    if (s_current_app_state == 0) {
-        msg = "PRESS [UP] TO START OR SET UP ON PHONE ...";
-    } else if (s_current_app_state == 1) {
-        msg = "SEARCHING GPS ...";
-    } else if (s_current_app_state == 2) {
-        msg = "READY TO START !";
-    } else if (s_current_app_state == 5) {
-        msg = "FINISH? [UP] SAVE [DOWN] DISCARD";
-    } else if (s_current_app_state == 6) {
-        msg = "SAVED ! PRESS SELECT TO RESET";
-    } else {
-        return;
-    }
+    static const char * const s_state_msgs[7] = {
+        "PRESS [UP] TO START...",
+        "SEARCHING GPS ...",
+        "READY TO START !",
+        NULL,
+        NULL,
+        "FINISH? [UP] SAVE [DOWN] DISCARD",
+        "SAVED ! PRESS SELECT TO RESET"
+    };
+    if (s_current_app_state >= 7 || !s_state_msgs[s_current_app_state]) return;
+    const char *msg = s_state_msgs[s_current_app_state];
     
     text_layer_set_text(s_msg_layer, msg);
     text_layer_set_text_color(s_msg_layer, s_current_fg);
@@ -203,8 +216,9 @@ void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {
 #endif
     int text_w = 450;
     
-    GRect start = GRect(w, -2, text_w, 24);
-    GRect finish = GRect(-text_w, -2, text_w, 24);
+    int mh = layer_get_bounds(s_msg_container_layer).size.h;
+    GRect start = GRect(w, -2, text_w, mh);
+    GRect finish = GRect(-text_w, -2, text_w, mh);
     
     s_marquee_anim = property_animation_create_layer_frame(text_layer_get_layer(s_msg_layer), &start, &finish);
     if (s_marquee_anim) {

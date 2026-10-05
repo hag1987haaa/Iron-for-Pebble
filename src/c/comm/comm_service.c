@@ -1,6 +1,37 @@
 ﻿#include "../ui/ui_map.h"
 #include "../ui/ui_course_picker.h"
+#include "../ui/ui_marquee.h"
+#include "../ui/ui_color_picker.h"
 #include "comm_service.h"
+
+#if !defined(PBL_PLATFORM_APLITE)
+// 1. IN ZONE: ト・トン♪ (軽快な2連タップ)
+static const uint32_t s_vibe_in_zone_durations[] = { 80, 80, 80 };
+static const VibePattern s_vibe_in_zone = {
+    .durations = s_vibe_in_zone_durations,
+    .num_segments = ARRAY_LENGTH(s_vibe_in_zone_durations),
+};
+
+// 2. TOO HIGH: ブーーッ・ブーーッ (重厚な警告ロング2連)
+static const uint32_t s_vibe_too_high_durations[] = { 250, 120, 250 };
+static const VibePattern s_vibe_too_high = {
+    .durations = s_vibe_too_high_durations,
+    .num_segments = ARRAY_LENGTH(s_vibe_too_high_durations),
+};
+
+// 3. TOO LOW: タ・タ・タ・タン！ (小刻みな4連スタッカート)
+static const uint32_t s_vibe_too_low_durations[] = { 40, 50, 40, 50, 40, 50, 80 };
+static const VibePattern s_vibe_too_low = {
+    .durations = s_vibe_too_low_durations,
+    .num_segments = ARRAY_LENGTH(s_vibe_too_low_durations),
+};
+#endif
+
+static CompanionType s_companion_type = COMPANION_TYPE_UNKNOWN;
+
+CompanionType comm_service_get_companion_type(void) {
+    return s_companion_type;
+}
 
 static CommServiceUIUpdateCallback s_ui_update_cb = NULL;
 static CommServiceGraphDirtyCallback s_graph_dirty_cb = NULL;
@@ -284,15 +315,18 @@ void comm_service_send_course_toggle(bool is_enabled, const char *course_name) {
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
     Tuple *t = dict_read_first(iterator);
     bool should_update_ui = false;
+    int received_cmd = 0;
+    const char *received_alert_msg = NULL;
 
     while (t != NULL) {
         if (t->key == MESSAGE_KEY_CMD) {
-            int cmd = (int)app_get_int_from_tuple(t);
-            if (cmd == 10) {
-                vibes_long_pulse();
-            } else if (cmd == 11) {
-                vibes_double_pulse();
-            }
+            received_cmd = (int)app_get_int_from_tuple(t);
+        }
+        else if (t->key == MESSAGE_KEY_KEY_ALERT_MSG) {
+            received_alert_msg = t->value->cstring;
+        }
+        else if (t->key == MESSAGE_KEY_KEY_COMPANION_TYPE) {
+            s_companion_type = (CompanionType)app_get_int_from_tuple(t);
         }
         else if (t->key == MESSAGE_KEY_STATE && s_app_state_ptr) {
             uint8_t new_state = (uint8_t)app_get_int_from_tuple(t);
@@ -418,6 +452,55 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 #endif
         }
         t = dict_read_next(iterator);
+    }
+
+    if (received_cmd != 0 || received_alert_msg != NULL) {
+        const char *display_msg = received_alert_msg;
+#if defined(PBL_PLATFORM_APLITE)
+        if (received_cmd == 10 || received_cmd == 21) {
+            vibes_long_pulse();
+            if (!display_msg && received_cmd == 21) display_msg = "HR TOO HIGH!";
+        } else if (received_cmd == 11 || received_cmd == 20) {
+            vibes_double_pulse();
+            if (!display_msg && received_cmd == 20) display_msg = "HR IN ZONE";
+        } else if (received_cmd == 22) {
+            vibes_short_pulse();
+            if (!display_msg) display_msg = "HR TOO LOW!";
+        } else if (display_msg) {
+            vibes_short_pulse();
+        }
+#else
+        if (received_cmd == 10) {
+            vibes_long_pulse();
+        } else if (received_cmd == 11) {
+            vibes_double_pulse();
+        } else if (received_cmd == 20) {
+            vibes_enqueue_custom_pattern(s_vibe_in_zone);
+            if (!display_msg) display_msg = "HR IN ZONE";
+        } else if (received_cmd == 21) {
+            vibes_enqueue_custom_pattern(s_vibe_too_high);
+            if (!display_msg) display_msg = "HR TOO HIGH!";
+        } else if (received_cmd == 22) {
+            vibes_enqueue_custom_pattern(s_vibe_too_low);
+            if (!display_msg) display_msg = "HR TOO LOW!";
+        } else if (display_msg) {
+            vibes_short_pulse();
+        }
+#endif
+
+        if (display_msg && display_msg[0] != '\0') {
+#if defined(PBL_COLOR)
+            GColor pc = (GColor){.argb = ui_color_picker_get_personal_color_argb()};
+            bool use_black = gcolor_equal(gcolor_legible_over(pc), GColorBlack);
+            GColor fg = use_black ? GColorBlack : GColorWhite;
+            GColor bg = pc;
+#else
+            GColor fg = GColorWhite;
+            GColor bg = GColorBlack;
+#endif
+            uint8_t app_state = s_app_state_ptr ? *s_app_state_ptr : 0;
+            ui_marquee_trigger_custom(display_msg, fg, bg, app_state);
+        }
     }
 
     if (should_update_ui && s_ui_update_cb) {

@@ -86,11 +86,15 @@ void ui_metric_render_page(GContext *ctx, GRect bounds, const MetricPageData *pa
 void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, GColor fg_color) {
     if (app_state < 3 && app_state != 6) return;
     // ワークアウト終了画面(5)またはマーキー表示中は下段項目を非表示
-    if (app_state == 5 || ui_marquee_is_active()) return;
+    if (ui_marquee_is_active()) return;
     
     GRect b = layer_get_bounds(layer);
     int wt = b.size.w;
+#if defined(PBL_ROUND)
+    int active_w = wt;
+#else
     int active_w = wt - ACTION_BAR_WIDTH;
+#endif
 
     graphics_context_set_fill_color(ctx, fg_color);
     graphics_context_set_stroke_color(ctx, fg_color);
@@ -106,10 +110,32 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
     }
 
     // グラフ描画（アクションバー手前までの有効幅にプロット）
-    int pl = 4;
+    // ?????????????????????????????????????
+#if defined(PBL_PLATFORM_CHALK)
+    int graph_margin_l = 28;
+    int graph_margin_r = 28;
+    int bottom_margin = 12;
+    int lbl_margin_l = 18;
+    int lbl_margin_r = 54; // ????????????????????????????
+#elif defined(PBL_PLATFORM_GABBRO)
+    int graph_margin_l = 38;
+    int graph_margin_r = 38;
+    int bottom_margin = 16;
+    int lbl_margin_l = 24;
+    int lbl_margin_r = 70; // ????????????????????????????
+#else
+    int graph_margin_l = 4;
+    int graph_margin_r = 0;
+    int bottom_margin = 0;
+    int lbl_margin_l = 4;
+    int lbl_margin_r = 4;
+#endif
+
+    int pl = graph_margin_l;
     int tm = 16;
-    int ah = b.size.h - tm;
-    int dw = active_w - pl;
+    int ah = b.size.h - tm - bottom_margin;
+    int dw = active_w - graph_margin_l - graph_margin_r;
+    int base_y = b.size.h - bottom_margin;
 
     int graph_id = graph_data_get_id();
     int graph_count = graph_data_get_count();
@@ -119,10 +145,11 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
 
     bool show_labels = !ui_marquee_is_active();
     if (show_labels) {
-        graphics_draw_text(ctx, graph_data_get_y_label(), fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(pl, 4, active_w, 16), 0, GTextAlignmentLeft, NULL);
-        graphics_draw_text(ctx, graph_data_get_x_label(), fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(0, 4, active_w - 4, 16), 0, GTextAlignmentRight, NULL);
+        graphics_draw_text(ctx, graph_data_get_y_label(), fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), 
+            GRect(lbl_margin_l, 4, active_w - lbl_margin_l - lbl_margin_r, 16), 0, GTextAlignmentLeft, NULL);
+        graphics_draw_text(ctx, graph_data_get_x_label(), fonts_get_system_font(FONT_KEY_GOTHIC_14), 
+            GRect(lbl_margin_l, 4, active_w - lbl_margin_l - lbl_margin_r, 16), 0, GTextAlignmentRight, NULL);
     }
-
     if (graph_count <= 0) return;
 
     int mah = (ah * 70) / 100;
@@ -152,13 +179,13 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             int y;
             int pt = graph_data_get_point(i);
             if (pt <= 0) {
-                y = b.size.h;
+                y = base_y;
             } else {
                 int val = pt;
                 if (val > plot_max) val = plot_max;
                 if (val < plot_min) val = plot_min;
                 int bh = ((val - plot_min) * mah) / plot_range;
-                y = b.size.h - mah + bh;
+                y = base_y - mah + bh;
             }
             if (prev_x != -1) {
                 graphics_context_set_stroke_width(ctx, 2);
@@ -182,7 +209,7 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             if (bh < 0) bh = 0;
             int bar_w = bw - 1;
             if (bar_w < 1) bar_w = 1;
-            graphics_fill_rect(ctx, GRect(pl + i * bw, b.size.h - bh, bar_w, bh), 0, GCornerNone);
+            graphics_fill_rect(ctx, GRect(pl + i * bw, base_y - bh, bar_w, bh), 0, GCornerNone);
         }
     } else if (graph_id == 2) { // HR
         int p_min = 999999, p_max = -1;
@@ -213,7 +240,7 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             
             int bar_w = bw - 1;
             if (bar_w < 1) bar_w = 1;
-            graphics_fill_rect(ctx, GRect(pl + i * bw, b.size.h - bh, bar_w, bh), 0, GCornerNone);
+            graphics_fill_rect(ctx, GRect(pl + i * bw, base_y - bh, bar_w, bh), 0, GCornerNone);
         }
     } else if (graph_id == 3) { // ELEVATION
         int p_min = 999999, p_max = -999999;
@@ -238,7 +265,7 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             if (val > plot_max) val = plot_max;
             if (val < plot_min) val = plot_min;
             int bh = ((val - plot_min) * mah) / plot_range;
-            int y = b.size.h - bh; 
+            int y = base_y - bh; 
 
             if (prev_x != -1) {
                 graphics_context_set_stroke_width(ctx, 2);
@@ -257,10 +284,10 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             snprintf(min_str, 16, "%dm", p_min);
             
             int lbl_w = 42;
-            int lbl_x = active_w - lbl_w;
+            int lbl_x = active_w - lbl_w - (lbl_margin_r - 4);
             int lbl_h = 16;
             graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
-            graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, base_y - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
         }
     } else if (graph_id == 4) { // CADENCE
         int p_min = 999999, p_max = -1;
@@ -286,13 +313,13 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             int y;
             int pt = graph_data_get_point(i);
             if (pt <= 0) {
-                y = b.size.h;
+                y = base_y;
             } else {
                 int val = pt;
                 if (val > plot_max) val = plot_max;
                 if (val < plot_min) val = plot_min;
                 int bh = ((val - plot_min) * mah) / plot_range;
-                y = b.size.h - bh; 
+                y = base_y - bh; 
             }
             if (prev_x != -1) {
                 graphics_context_set_stroke_width(ctx, 2);
@@ -311,10 +338,10 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             snprintf(min_str, 16, "%d", p_min);
             
             int lbl_w = 28;
-            int lbl_x = active_w - lbl_w;
+            int lbl_x = active_w - lbl_w - (lbl_margin_r - 4);
             int lbl_h = 16;
             graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
-            graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, b.size.h - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, base_y - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
         }
     } else if (graph_id == 5) { // CALORIES
         int p_max = 1;
@@ -328,11 +355,11 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             if (bh < 0) bh = 0;
             int bar_w = bw - 1;
             if (bar_w < 1) bar_w = 1; 
-            graphics_fill_rect(ctx, GRect(pl + i * bw, b.size.h - bh, bar_w, bh), 0, GCornerNone);
+            graphics_fill_rect(ctx, GRect(pl + i * bw, base_y - bh, bar_w, bh), 0, GCornerNone);
         }
         if (show_labels) {
             int lbl_w = 48;
-            int lbl_x = active_w - lbl_w;
+            int lbl_x = active_w - lbl_w - (lbl_margin_r - 4);
             int lbl_h = 16;
             graphics_draw_text(ctx, graph_data_get_max_label(), fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
         }
@@ -402,7 +429,11 @@ void ui_mid_bg_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state,
     if (!graph_data_is_detail_mode(app_state)) {
         const MidPageData *page = graph_data_get_current_mid_page();
         if (page) {
+#if defined(PBL_ROUND)
+            int active_w = wt;
+#else
             int active_w = wt - ACTION_BAR_WIDTH;
+#endif
             ui_metric_render_page(ctx, GRect(0, upper_h, active_w, mid_h), page, true, main_bg, main_fg, wt);
         }
         return;

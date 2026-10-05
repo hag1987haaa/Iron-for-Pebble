@@ -45,7 +45,9 @@
             "MAP_STATE": 10022,
             "KEY_PAN_DX": 10023,
             "KEY_PAN_DY": 10024,
-            "KEY_COURSES_DATA": 10025
+            "KEY_COURSES_DATA": 10025,
+            "KEY_ALERT_MSG": 10026,
+            "KEY_COMPANION_TYPE": 10027
         },
         "projectType": "native",
         "resources": {
@@ -194,5 +196,5 @@
             "watchface": false
         }
     },
-    "version": "1.4.0"
+    "version": "1.4.1"
 }

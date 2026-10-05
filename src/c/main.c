@@ -670,17 +670,16 @@ static void update_ui_state(void) {
     if (s_time_hour_layer) layer_set_hidden(text_layer_get_layer(s_time_hour_layer), !s_is_long_workout || hide_time);
     if (s_time_colon1_layer) layer_set_hidden(text_layer_get_layer(s_time_colon1_layer), !s_is_long_workout || hide_time);
     
-    if (s_time_hour_layer) text_layer_set_text_color(s_time_hour_layer, s_current_main_fg);
-    if (s_time_colon1_layer) text_layer_set_text_color(s_time_colon1_layer, s_current_main_fg);
-    if (s_time_min_layer) text_layer_set_text_color(s_time_min_layer, s_current_main_fg);
-    if (s_time_colon2_layer) text_layer_set_text_color(s_time_colon2_layer, s_current_main_fg);
-    if (s_time_sec_layer) text_layer_set_text_color(s_time_sec_layer, s_current_main_fg);
+    TextLayer *time_tls[] = { s_time_hour_layer, s_time_colon1_layer, s_time_min_layer, s_time_colon2_layer, s_time_sec_layer };
+    for (uint32_t i = 0; i < ARRAY_LENGTH(time_tls); i++) {
+        if (time_tls[i]) text_layer_set_text_color(time_tls[i], s_current_main_fg);
+    }
     
     GColor mid_text_color = is_active ? s_current_main_bg : s_current_main_fg;
-    if (s_clock_layer) text_layer_set_text_color(s_clock_layer, mid_text_color);
-    if (s_dist_layer) text_layer_set_text_color(s_dist_layer, mid_text_color);
-    if (s_hr_layer) text_layer_set_text_color(s_hr_layer, mid_text_color);
-    if (s_step_layer) text_layer_set_text_color(s_step_layer, mid_text_color);
+    TextLayer *mid_tls[] = { s_clock_layer, s_dist_layer, s_hr_layer, s_step_layer };
+    for (uint32_t i = 0; i < ARRAY_LENGTH(mid_tls); i++) {
+        if (mid_tls[i]) text_layer_set_text_color(mid_tls[i], mid_text_color);
+    }
 
     if (s_action_bar) {
         if (ui_map_is_active()) {
@@ -742,15 +741,10 @@ static void update_ui_state(void) {
         }
         
         if (s_graph_layer) layer_insert_above_sibling(s_graph_layer, action_bar_layer_get_layer(s_action_bar));
-        if (s_time_hour_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_hour_layer), s_mid_bg_layer);
-        if (s_time_colon1_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_colon1_layer), s_mid_bg_layer);
-        if (s_time_min_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_min_layer), s_mid_bg_layer);
-        if (s_time_colon2_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_colon2_layer), s_mid_bg_layer);
-        if (s_time_sec_layer) layer_insert_above_sibling(text_layer_get_layer(s_time_sec_layer), s_mid_bg_layer);
-        if (s_dist_layer) layer_insert_above_sibling(text_layer_get_layer(s_dist_layer), s_mid_bg_layer);
-        if (s_step_layer) layer_insert_above_sibling(text_layer_get_layer(s_step_layer), s_mid_bg_layer);
-        if (s_hr_layer) layer_insert_above_sibling(text_layer_get_layer(s_hr_layer), s_mid_bg_layer);
-        if (s_clock_layer) layer_insert_above_sibling(text_layer_get_layer(s_clock_layer), s_mid_bg_layer);
+        TextLayer *tls[] = { s_time_hour_layer, s_time_colon1_layer, s_time_min_layer, s_time_colon2_layer, s_time_sec_layer, s_dist_layer, s_step_layer, s_hr_layer, s_clock_layer };
+        for (uint32_t i = 0; i < ARRAY_LENGTH(tls); i++) {
+            if (tls[i]) layer_insert_above_sibling(text_layer_get_layer(tls[i]), s_mid_bg_layer);
+        }
     }
 
     if (s_mid_bg_layer) layer_mark_dirty(s_mid_bg_layer);
@@ -1044,8 +1038,8 @@ static void main_window_load(Window *window) {
     y5_base_s = upper_h - 48; 
     y5_colon1 = y5_base_h + 2;
     y5_colon2 = y5_base_m + 12;
-    offset_x3 = 11;
-    offset_x5 = -3;
+    offset_x3 = 20; // 画面中央(x=90)に配置: (active_w - t3)/2 + 20 = (140 - t3)/2 + 20 = (180 - t3)/2
+    offset_x5 = 3;  // 1時間超で秒とActionBarが衝突するのを回避(右端x<=138, ActionBarとのマージン14px)
     
     row_h = 18;
     int mx = 20;
@@ -1111,8 +1105,8 @@ static void main_window_load(Window *window) {
     y5_base_s = upper_h - 68; 
     y5_colon1 = y5_base_h + 10;
     y5_colon2 = y5_base_m + 22;
-    offset_x3 = 15;
-    offset_x5 = -12;
+    offset_x3 = 20; // 画面中央(x=130)に配置: (active_w - t3)/2 + 20 = (220 - t3)/2 + 20 = (260 - t3)/2
+    offset_x5 = -8; // 1時間超で秒とActionBarが衝突するのを回避(右端x<=202, ActionBarとのマージン28px)
     
     row_h = 28;
     int mx = 30;
@@ -1300,15 +1294,10 @@ static void main_window_unload(Window *window) {
     ui_color_picker_destroy();
 #endif
 
-    if (s_time_hour_layer) text_layer_destroy(s_time_hour_layer);
-    if (s_time_colon1_layer) text_layer_destroy(s_time_colon1_layer);
-    if (s_time_min_layer) text_layer_destroy(s_time_min_layer);
-    if (s_time_colon2_layer) text_layer_destroy(s_time_colon2_layer);
-    if (s_time_sec_layer) text_layer_destroy(s_time_sec_layer);
-    if (s_clock_layer) text_layer_destroy(s_clock_layer);
-    if (s_dist_layer) text_layer_destroy(s_dist_layer);
-    if (s_step_layer) text_layer_destroy(s_step_layer);
-    if (s_hr_layer) text_layer_destroy(s_hr_layer);
+    TextLayer *destroy_tls[] = { s_time_hour_layer, s_time_colon1_layer, s_time_min_layer, s_time_colon2_layer, s_time_sec_layer, s_clock_layer, s_dist_layer, s_step_layer, s_hr_layer };
+    for (uint32_t i = 0; i < ARRAY_LENGTH(destroy_tls); i++) {
+        if (destroy_tls[i]) text_layer_destroy(destroy_tls[i]);
+    }
     
     if (s_mid_bg_layer) layer_destroy(s_mid_bg_layer);
     if (s_graph_layer) layer_destroy(s_graph_layer);

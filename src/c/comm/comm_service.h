@@ -36,3 +36,5 @@ void comm_service_set_ui_buffers(
     uint8_t *app_state_ptr, bool *is_paused_ptr, bool *is_long_workout_ptr,
     ActivityType *current_activity_ptr, bool has_hr_sensor
 );
+
+CompanionType comm_service_get_companion_type(void);

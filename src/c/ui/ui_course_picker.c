@@ -99,16 +99,28 @@ void ui_course_picker_init(void) {
         persist_read_data(PK_COURSES_DATA, s_courses, sizeof(s_courses));
     } else {
         // 初期状態: デフォルトコース
+#if MAX_COURSES >= 2
         s_course_count = 2;
+#else
+        s_course_count = 1;
+#endif
         s_courses[0].id = 1;
         strncpy(s_courses[0].name, "COURSE A", COURSE_NAME_LEN - 1);
         s_courses[0].name[COURSE_NAME_LEN - 1] = '\0';
         s_courses[0].is_enabled = true;
 
+#if MAX_COURSES >= 2
         s_courses[1].id = 2;
+#endif
+#if MAX_COURSES >= 2
         strncpy(s_courses[1].name, "COURSE B", COURSE_NAME_LEN - 1);
+#endif
+#if MAX_COURSES >= 2
         s_courses[1].name[COURSE_NAME_LEN - 1] = '\0';
+#endif
+#if MAX_COURSES >= 2
         s_courses[1].is_enabled = false;
+#endif
         
         ui_course_picker_save();
     }
