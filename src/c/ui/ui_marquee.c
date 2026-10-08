@@ -45,7 +45,7 @@ void ui_marquee_stop(void) {
     }
 }
 
-void ui_marquee_destroy(void) {
+void ui_marquee_destroy_force(void) {
     ui_marquee_stop();
     if (s_msg_layer) {
         text_layer_destroy(s_msg_layer);
@@ -57,6 +57,13 @@ void ui_marquee_destroy(void) {
     }
     s_is_custom_marquee = false;
     if (s_graph_layer) layer_mark_dirty(s_graph_layer);
+}
+
+void ui_marquee_destroy(void) {
+    if (s_is_custom_marquee && s_marquee_timer) {
+        return; // カスタムメッセージ（アラート）表示中は破棄をガードして画面維持
+    }
+    ui_marquee_destroy_force();
 }
 
 bool ui_marquee_is_active(void) { return (s_msg_container_layer != NULL); }
@@ -137,12 +144,12 @@ static void custom_msg_timer_callback(void *context) {
     s_marquee_timer = NULL;
     s_is_custom_marquee = false;
     if (s_current_app_state == 5 || s_current_app_state == 6) {
-        ui_marquee_destroy();
+        ui_marquee_destroy_force();
         s_marquee_timer = app_timer_register(5000, marquee_timer_callback, NULL);
     } else if (s_current_app_state < 3) {
         ui_marquee_trigger(s_current_app_state, s_current_fg, s_current_bg);
     } else {
-        ui_marquee_destroy();
+        ui_marquee_destroy_force();
     }
 }
 
@@ -174,7 +181,7 @@ void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color
 #endif
     
     layer_set_frame(text_layer_get_layer(s_msg_layer), GRect(0, -2, w, layer_get_bounds(s_msg_container_layer).size.h));
-    s_marquee_timer = app_timer_register(3000, custom_msg_timer_callback, NULL);
+    s_marquee_timer = app_timer_register(3500, custom_msg_timer_callback, NULL);
 }
 
 void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {

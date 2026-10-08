@@ -83,6 +83,68 @@ void ui_metric_render_page(GContext *ctx, GRect bounds, const MetricPageData *pa
         GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
+static void draw_line_plot(GContext *ctx, int pl, int bw, int base_y, int mah, 
+                           int count, int plot_min, int plot_max, bool invert_y, bool zero_is_bottom) {
+    int plot_range = plot_max - plot_min;
+    if (plot_range <= 0) plot_range = 1;
+    int prev_x = -1, prev_y = -1;
+
+    for (int i = 0; i < count; i++) {
+        int x = pl + i * bw + (bw / 2);
+        int pt = graph_data_get_point(i);
+        int y;
+        if (zero_is_bottom && pt <= 0) {
+            y = base_y;
+        } else {
+            int val = pt;
+            if (val > plot_max) val = plot_max;
+            if (val < plot_min) val = plot_min;
+            int bh = ((val - plot_min) * mah) / plot_range;
+            y = invert_y ? (base_y - mah + bh) : (base_y - bh);
+        }
+        if (prev_x != -1) {
+            graphics_context_set_stroke_width(ctx, 2);
+            graphics_draw_line(ctx, GPoint(prev_x, prev_y), GPoint(x, y));
+            graphics_context_set_stroke_width(ctx, 1);
+        } else {
+            graphics_fill_circle(ctx, GPoint(x, y), 2);
+        }
+        prev_x = x;
+        prev_y = y;
+    }
+}
+
+static void draw_bar_plot(GContext *ctx, int pl, int bw, int base_y, int mah, 
+                          int count, int plot_min, int plot_max, bool min_bar_height) {
+    int plot_range = plot_max - plot_min;
+    if (plot_range <= 0) plot_range = 1;
+    int bar_w = bw - 1;
+    if (bar_w < 1) bar_w = 1;
+
+    for (int i = 0; i < count; i++) {
+        int val = graph_data_get_point(i);
+        if (val <= 0) continue;
+        if (val > plot_max) val = plot_max;
+        if (val < plot_min) val = plot_min;
+        int bh = ((val - plot_min) * mah) / plot_range;
+        if (min_bar_height && bh < 2) bh = 2;
+        if (bh <= 0) continue;
+        graphics_fill_rect(ctx, GRect(pl + i * bw, base_y - bh, bar_w, bh), 0, GCornerNone);
+    }
+}
+
+static void draw_side_labels(GContext *ctx, int active_w, int lbl_margin_r, int base_y, 
+                             const char *top_str, const char *bot_str, int lbl_w) {
+    int lbl_x = active_w - lbl_w - (lbl_margin_r - 4);
+    GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+    if (top_str) {
+        graphics_draw_text(ctx, top_str, font, GRect(lbl_x, 18, lbl_w, 16), 0, GTextAlignmentRight, NULL);
+    }
+    if (bot_str) {
+        graphics_draw_text(ctx, bot_str, font, GRect(lbl_x, base_y - 16, lbl_w, 16), 0, GTextAlignmentRight, NULL);
+    }
+}
+
 void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, GColor fg_color) {
     if (app_state < 3 && app_state != 6) return;
     // ワークアウト終了画面(5)またはマーキー表示中は下段項目を非表示
@@ -110,19 +172,18 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
     }
 
     // グラフ描画（アクションバー手前までの有効幅にプロット）
-    // ?????????????????????????????????????
 #if defined(PBL_PLATFORM_CHALK)
     int graph_margin_l = 28;
     int graph_margin_r = 28;
     int bottom_margin = 12;
     int lbl_margin_l = 18;
-    int lbl_margin_r = 54; // ????????????????????????????
+    int lbl_margin_r = 54;
 #elif defined(PBL_PLATFORM_GABBRO)
     int graph_margin_l = 38;
     int graph_margin_r = 38;
     int bottom_margin = 16;
     int lbl_margin_l = 24;
-    int lbl_margin_r = 70; // ????????????????????????????
+    int lbl_margin_r = 70;
 #else
     int graph_margin_l = 4;
     int graph_margin_r = 0;
@@ -153,215 +214,69 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
     if (graph_count <= 0) return;
 
     int mah = (ah * 70) / 100;
-    int prev_x = -1, prev_y = -1;
 
-    if (graph_id == 0) { // PACE
-        int p_min = 999999, p_max = -1;
-        for (int i = 0; i < graph_count; i++) {
-            int pt = graph_data_get_point(i);
-            if (pt > 0) {
-                if (pt > p_max) p_max = pt;
-                if (pt < p_min) p_min = pt;
-            }
-        }
-        if (p_min == 999999) { p_min = 0; p_max = 1; }
-        if (p_max == p_min) p_max = p_min + 1;
-
-        int margin = (p_max - p_min) / 4;
-        if (margin < 10) margin = 10;
-        int plot_min = p_min - margin;
-        if (plot_min < 0) plot_min = 0;
-        int plot_max = p_max + margin;
-        int plot_range = plot_max - plot_min;
-
-        for (int i = 0; i < graph_count; i++) {
-            int x = pl + i * bw + (bw / 2);
-            int y;
-            int pt = graph_data_get_point(i);
-            if (pt <= 0) {
-                y = base_y;
-            } else {
-                int val = pt;
-                if (val > plot_max) val = plot_max;
-                if (val < plot_min) val = plot_min;
-                int bh = ((val - plot_min) * mah) / plot_range;
-                y = base_y - mah + bh;
-            }
-            if (prev_x != -1) {
-                graphics_context_set_stroke_width(ctx, 2);
-                graphics_draw_line(ctx, GPoint(prev_x, prev_y), GPoint(x, y));
-                graphics_context_set_stroke_width(ctx, 1);
-            } else {
-                graphics_fill_circle(ctx, GPoint(x, y), 2);
-            }
-            prev_x = x;
-            prev_y = y;
-        }
-    } else if (graph_id == 1) { // SPEED
-        int p_max = 1;
-        for (int i = 0; i < graph_count; i++) {
-            int pt = graph_data_get_point(i);
-            if (pt > p_max) p_max = pt;
-        }
-        for (int i = 0; i < graph_count; i++) {
-            int pt = graph_data_get_point(i);
-            int bh = (pt * mah) / p_max;
-            if (bh < 0) bh = 0;
-            int bar_w = bw - 1;
-            if (bar_w < 1) bar_w = 1;
-            graphics_fill_rect(ctx, GRect(pl + i * bw, base_y - bh, bar_w, bh), 0, GCornerNone);
-        }
-    } else if (graph_id == 2) { // HR
-        int p_min = 999999, p_max = -1;
-        for (int i = 0; i < graph_count; i++) {
-            int pt = graph_data_get_point(i);
-            if (pt > 0) {
-                if (pt > p_max) p_max = pt;
-                if (pt < p_min) p_min = pt;
-            }
-        }
-        if (p_min == 999999) { p_min = 60; p_max = 120; }
-        if (p_max == p_min) p_max = p_min + 10;
-
-        int plot_max = p_max + 10;
-        int plot_min = p_min - 20;
-        if (plot_min < 0) plot_min = 0;
-        int plot_range = plot_max - plot_min;
-
-        for (int i = 0; i < graph_count; i++) {
-            int val = graph_data_get_point(i);
-            if (val <= 0) continue; 
-
-            if (val > plot_max) val = plot_max;
-            if (val < plot_min) val = plot_min;
-            
-            int bh = ((val - plot_min) * mah) / plot_range;
-            if (bh < 2) bh = 2; 
-            
-            int bar_w = bw - 1;
-            if (bar_w < 1) bar_w = 1;
-            graphics_fill_rect(ctx, GRect(pl + i * bw, base_y - bh, bar_w, bh), 0, GCornerNone);
-        }
-    } else if (graph_id == 3) { // ELEVATION
-        int p_min = 999999, p_max = -999999;
-        for (int i = 0; i < graph_count; i++) {
-            int pt = graph_data_get_point(i);
+    // データ全体の min / max 探索
+    int p_min = 999999, p_max = -999999;
+    for (int i = 0; i < graph_count; i++) {
+        int pt = graph_data_get_point(i);
+        if (graph_id == 3 || pt > 0) {
             if (pt > p_max) p_max = pt;
             if (pt < p_min) p_min = pt;
         }
+    }
+
+    int plot_min = 0, plot_max = 1;
+
+    if (graph_id == 0) { // PACE (折れ線・Y軸反転)
+        if (p_min == 999999) { p_min = 0; p_max = 1; }
+        if (p_max == p_min) p_max = p_min + 1;
+        int margin = (p_max - p_min) / 4;
+        if (margin < 10) margin = 10;
+        plot_min = (p_min > margin) ? p_min - margin : 0;
+        plot_max = p_max + margin;
+        draw_line_plot(ctx, pl, bw, base_y, mah, graph_count, plot_min, plot_max, true, true);
+    } else if (graph_id == 1) { // SPEED (棒グラフ・0基準)
+        if (p_max < 1) p_max = 1;
+        draw_bar_plot(ctx, pl, bw, base_y, mah, graph_count, 0, p_max, false);
+    } else if (graph_id == 2) { // HR (棒グラフ・オートスケール)
+        if (p_min == 999999) { p_min = 60; p_max = 120; }
+        if (p_max == p_min) p_max = p_min + 10;
+        plot_min = (p_min > 20) ? p_min - 20 : 0;
+        plot_max = p_max + 10;
+        draw_bar_plot(ctx, pl, bw, base_y, mah, graph_count, plot_min, plot_max, true);
+    } else if (graph_id == 3) { // ELEVATION (折れ線・mラベル)
         if (p_min == 999999) { p_min = 0; p_max = 100; }
-        if (p_max == p_min) { p_max = p_min + 10; p_min -= 10; }
-        
+        if (p_max == p_min) { p_max += 10; p_min -= 10; }
         int margin = (p_max - p_min) / 4;
         if (margin < 5) margin = 5;
-        int plot_min = p_min - margin;
-        int plot_max = p_max + margin;
-        int plot_range = plot_max - plot_min;
-
-        for (int i = 0; i < graph_count; i++) {
-            int x = pl + i * bw + (bw / 2);
-            int val = graph_data_get_point(i);
-            
-            if (val > plot_max) val = plot_max;
-            if (val < plot_min) val = plot_min;
-            int bh = ((val - plot_min) * mah) / plot_range;
-            int y = base_y - bh; 
-
-            if (prev_x != -1) {
-                graphics_context_set_stroke_width(ctx, 2);
-                graphics_draw_line(ctx, GPoint(prev_x, prev_y), GPoint(x, y));
-                graphics_context_set_stroke_width(ctx, 1);
-            } else {
-                graphics_fill_circle(ctx, GPoint(x, y), 2);
-            }
-            prev_x = x;
-            prev_y = y;
-        }
-
+        plot_min = p_min - margin;
+        plot_max = p_max + margin;
+        draw_line_plot(ctx, pl, bw, base_y, mah, graph_count, plot_min, plot_max, false, false);
         if (show_labels) {
             char max_str[16], min_str[16];
             snprintf(max_str, 16, "%dm", p_max);
             snprintf(min_str, 16, "%dm", p_min);
-            
-            int lbl_w = 42;
-            int lbl_x = active_w - lbl_w - (lbl_margin_r - 4);
-            int lbl_h = 16;
-            graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
-            graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, base_y - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            draw_side_labels(ctx, active_w, lbl_margin_r, base_y, max_str, min_str, 42);
         }
-    } else if (graph_id == 4) { // CADENCE
-        int p_min = 999999, p_max = -1;
-        for (int i = 0; i < graph_count; i++) {
-            int pt = graph_data_get_point(i);
-            if (pt > 0) {
-                if (pt > p_max) p_max = pt;
-                if (pt < p_min) p_min = pt;
-            }
-        }
+    } else if (graph_id == 4) { // CADENCE (折れ線・数値ラベル)
         if (p_min == 999999) { p_min = 60; p_max = 180; }
         if (p_max == p_min) p_max = p_min + 1;
-        
         int margin = (p_max - p_min) / 4;
         if (margin < 5) margin = 5;
-        int plot_min = p_min - margin;
-        if (plot_min < 0) plot_min = 0;
-        int plot_max = p_max + margin;
-        int plot_range = plot_max - plot_min;
-
-        for (int i = 0; i < graph_count; i++) {
-            int x = pl + i * bw + (bw / 2);
-            int y;
-            int pt = graph_data_get_point(i);
-            if (pt <= 0) {
-                y = base_y;
-            } else {
-                int val = pt;
-                if (val > plot_max) val = plot_max;
-                if (val < plot_min) val = plot_min;
-                int bh = ((val - plot_min) * mah) / plot_range;
-                y = base_y - bh; 
-            }
-            if (prev_x != -1) {
-                graphics_context_set_stroke_width(ctx, 2);
-                graphics_draw_line(ctx, GPoint(prev_x, prev_y), GPoint(x, y));
-                graphics_context_set_stroke_width(ctx, 1);
-            } else {
-                graphics_fill_circle(ctx, GPoint(x, y), 2);
-            }
-            prev_x = x;
-            prev_y = y;
-        }
-
+        plot_min = (p_min > margin) ? p_min - margin : 0;
+        plot_max = p_max + margin;
+        draw_line_plot(ctx, pl, bw, base_y, mah, graph_count, plot_min, plot_max, false, true);
         if (show_labels) {
             char max_str[16], min_str[16];
             snprintf(max_str, 16, "%d", p_max);
             snprintf(min_str, 16, "%d", p_min);
-            
-            int lbl_w = 28;
-            int lbl_x = active_w - lbl_w - (lbl_margin_r - 4);
-            int lbl_h = 16;
-            graphics_draw_text(ctx, max_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
-            graphics_draw_text(ctx, min_str, fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, base_y - 16, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            draw_side_labels(ctx, active_w, lbl_margin_r, base_y, max_str, min_str, 28);
         }
-    } else if (graph_id == 5) { // CALORIES
-        int p_max = 1;
-        for (int i = 0; i < graph_count; i++) {
-            int pt = graph_data_get_point(i);
-            if (pt > p_max) p_max = pt;
-        }
-        for (int i = 0; i < graph_count; i++) {
-            int pt = graph_data_get_point(i);
-            int bh = (pt * mah) / p_max;
-            if (bh < 0) bh = 0;
-            int bar_w = bw - 1;
-            if (bar_w < 1) bar_w = 1; 
-            graphics_fill_rect(ctx, GRect(pl + i * bw, base_y - bh, bar_w, bh), 0, GCornerNone);
-        }
+    } else if (graph_id == 5) { // CALORIES (棒グラフ・MAXラベル)
+        if (p_max < 1) p_max = 1;
+        draw_bar_plot(ctx, pl, bw, base_y, mah, graph_count, 0, p_max, false);
         if (show_labels) {
-            int lbl_w = 48;
-            int lbl_x = active_w - lbl_w - (lbl_margin_r - 4);
-            int lbl_h = 16;
-            graphics_draw_text(ctx, graph_data_get_max_label(), fonts_get_system_font(FONT_KEY_GOTHIC_14), GRect(lbl_x, 18, lbl_w, lbl_h), 0, GTextAlignmentRight, NULL);
+            draw_side_labels(ctx, active_w, lbl_margin_r, base_y, graph_data_get_max_label(), NULL, 48);
         }
     }
 }

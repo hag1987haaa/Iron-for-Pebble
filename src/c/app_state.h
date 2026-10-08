@@ -98,10 +98,14 @@ extern const char* const ACTIVITY_NAMES[ACTIVITY_COUNT];
 #define MAX_MID_PAGES 2
 #define MAX_LOWER_PAGES 2
 #define MAX_GRAPH_DATA 12
+#elif defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
+#define MAX_MID_PAGES 15
+#define MAX_LOWER_PAGES 15
+#define MAX_GRAPH_DATA 40
 #else
 #define MAX_MID_PAGES 15
 #define MAX_LOWER_PAGES 15
-#define MAX_GRAPH_DATA 45
+#define MAX_GRAPH_DATA 25
 #endif
 
 typedef struct {
@@ -160,4 +164,4 @@ static inline bool app_is_numeric_string(const char *str) {
     return true;
 }
 
-#define APP_VERSION_STR "v1.4.1"
+#define APP_VERSION_STR "v1.4.2"

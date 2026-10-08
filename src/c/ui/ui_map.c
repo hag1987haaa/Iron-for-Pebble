@@ -1,4 +1,6 @@
-﻿#include "ui_map.h"
+#include "ui_map.h"
+
+#if !defined(PBL_PLATFORM_APLITE)
 
 static Layer *s_map_layer = NULL;
 static bool s_is_map_active = false;
@@ -319,3 +321,5 @@ void ui_map_update_colors(GColor main_bg, GColor main_fg) {
         layer_mark_dirty(s_map_layer);
     }
 }
+
+#endif

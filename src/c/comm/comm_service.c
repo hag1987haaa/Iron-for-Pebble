@@ -1,4 +1,4 @@
-﻿#include "../ui/ui_map.h"
+#include "../ui/ui_map.h"
 #include "../ui/ui_course_picker.h"
 #include "../ui/ui_marquee.h"
 #include "../ui/ui_color_picker.h"
@@ -336,6 +336,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                 if (new_state == 0 || new_state == 1 || new_state == 2) {
                     comm_service_reset_elapsed_seconds();
                     s_map_transfer_in_progress = false;
+                    graph_data_clear();
                 }
                 should_update_ui = true;
             }
@@ -345,12 +346,20 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             if (raw && strlen(raw) >= 5 && s_time_min_buf && s_time_sec_buf) {
                 uint32_t rx_sec = parse_formatted_time(raw);
                 uint8_t state = s_app_state_ptr ? *s_app_state_ptr : 0;
+                bool is_paused = s_is_paused_ptr ? *s_is_paused_ptr : false;
                 
-                // 逆行防止ガード:
-                // 計測中(3)の場合、スマホ時刻が表示秒数以上の時のみ受け入れる。
-                // （過去パケットや遅延パケットで時計が戻る現象を完全排除）
-                // ただし、状態が計測中以外、またはスマホ時刻との差が5秒以上（リセットや再開等）の場合は強制同期
-                if (state != 3 || rx_sec >= s_current_elapsed_seconds || (s_current_elapsed_seconds - rx_sec > 5)) {
+                if (state == 3 && !is_paused) {
+                    // 計測中：ウォッチ側RTCで毎秒ジャストに自律カウントアップするため、
+                    // スマホからのパケットによるジッター（ゆらぎ）を遮断する。
+                    // 誤差が2秒以上ある場合（リセット、スキップ、長時間のドリフト）のみ同期補正
+                    int diff = (int)rx_sec - (int)s_current_elapsed_seconds;
+                    if (diff > 1 || diff < -1) {
+                        s_current_elapsed_seconds = rx_sec;
+                        comm_service_format_time_to_buffers(s_current_elapsed_seconds);
+                        should_update_ui = true;
+                    }
+                } else {
+                    // 停止中・準備中・一時停止中などはスマホに100%即時追従
                     s_current_elapsed_seconds = rx_sec;
                     comm_service_format_time_to_buffers(s_current_elapsed_seconds);
                     should_update_ui = true;
@@ -412,6 +421,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                 should_update_ui = true;
             }
         }
+#if !defined(PBL_PLATFORM_APLITE)
         else if (t->key == MESSAGE_KEY_MAP_DATA) {
             Tuple *t_idx = dict_find(iterator, MESSAGE_KEY_MAP_CHUNK_IDX);
             Tuple *t_total = dict_find(iterator, MESSAGE_KEY_MAP_TOTAL_CHUNKS);
@@ -426,6 +436,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             }
             should_update_ui = true;
         }
+#endif
         else if (t->key == MESSAGE_KEY_KEY_COURSES_DATA) {
             const char *raw_courses = t->value->cstring;
             if (raw_courses) {
@@ -433,6 +444,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                 should_update_ui = true;
             }
         }
+#if !defined(PBL_PLATFORM_APLITE)
         else if (t->key == MESSAGE_KEY_MAP_STATE) {
             int map_state = (int)app_get_int_from_tuple(t);
             if (map_state == 1 && !ui_map_is_active()) {
@@ -444,6 +456,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                 should_update_ui = true;
             }
         }
+#endif
         else if (t->key == KEY_HR_INTERVAL) {
 #if defined(PBL_HEALTH)
             if (s_has_hr_sensor) {
@@ -532,5 +545,9 @@ void comm_service_init(CommServiceUIUpdateCallback ui_update_cb, CommServiceGrap
     app_message_register_inbox_received(inbox_received_callback);
     app_message_register_outbox_sent(outbox_sent_callback);
     app_message_register_outbox_failed(outbox_failed_callback);
+#if defined(PBL_PLATFORM_APLITE)
+    app_message_open(256, 128);
+#else
     app_message_open(1024, 256);
+#endif
 }
