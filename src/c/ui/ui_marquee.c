@@ -161,6 +161,7 @@ void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color
     
     create_marquee_layers();
     ui_marquee_stop();
+    if (!s_msg_layer || !s_msg_container_layer || !s_window) return;
     
     #if defined(PBL_PLATFORM_APLITE)
     static char custom_msg_buf[16];

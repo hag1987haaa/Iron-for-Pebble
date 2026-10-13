@@ -4,28 +4,87 @@
 #include "../ui/ui_color_picker.h"
 #include "comm_service.h"
 
-#if !defined(PBL_PLATFORM_APLITE)
-// 1. IN ZONE: ト・トン♪ (軽快な2連タップ)
-static const uint32_t s_vibe_in_zone_durations[] = { 80, 80, 80 };
+// ============================================================================
+// バイブレーション パターン定義 (テーマ曲再現: 帝国のマーチ & Walking on Sunshine)
+// ============================================================================
+
+// 1. IN ZONE: ト・ト・トン♪ (軽快な3連タップ)
+static const uint32_t s_vibe_in_zone_durations[] = { 100, 80, 100, 80, 100 };
 static const VibePattern s_vibe_in_zone = {
     .durations = s_vibe_in_zone_durations,
     .num_segments = ARRAY_LENGTH(s_vibe_in_zone_durations),
 };
 
-// 2. TOO HIGH: ブーーッ・ブーーッ (重厚な警告ロング2連)
-static const uint32_t s_vibe_too_high_durations[] = { 250, 120, 250 };
-static const VibePattern s_vibe_too_high = {
-    .durations = s_vibe_too_high_durations,
-    .num_segments = ARRAY_LENGTH(s_vibe_too_high_durations),
+// 2. TOO HIGH: 帝国のマーチ（ダース・ベイダー: 心拍上がりすぎ・ダークサイド警報）
+// 全パートを1つの統合パターンに集約し、OSハードウェアで一発再生（全17セグメント、合計3,900ms）
+// パート1: 400(ON), 200(OFF), 400(ON), 200(OFF), 400(ON), 200(OFF)
+// パート2: 220(ON), 120(OFF), 150(ON),  60(OFF), 420(ON), 160(OFF)
+// パート3: 220(ON), 120(OFF), 150(ON),  60(OFF), 420(ON)
+static const uint32_t s_vader_durations[] = {
+    400, 200, 400, 200, 400, 200,
+    220, 120, 150,  60, 420, 160,
+    220, 120, 150,  60, 420
+};
+static const VibePattern s_vader_pattern = {
+    .durations = s_vader_durations,
+    .num_segments = ARRAY_LENGTH(s_vader_durations),
 };
 
-// 3. TOO LOW: タ・タ・タ・タン！ (小刻みな4連スタッカート)
-static const uint32_t s_vibe_too_low_durations[] = { 40, 50, 40, 50, 40, 50, 80 };
-static const VibePattern s_vibe_too_low = {
-    .durations = s_vibe_too_low_durations,
-    .num_segments = ARRAY_LENGTH(s_vibe_too_low_durations),
+// 3. TOO LOW: Walking on Sunshine (ベースライン: 心拍不足・ペースアップ促進)
+// 全4小節を一発再生（全27セグメント、合計3,480ms / 軽快なアップテンポシャッフル）
+// 1小節目 (3音): 80(ON), 160(OFF), 80(ON), 160(OFF), 240(ON), 80(OFF) = 800ms
+// 2小節目 (4音): 80(ON), 160(OFF), 80(ON), 160(OFF),  80(ON), 80(OFF), 240(ON), 80(OFF) = 960ms
+// 3小節目 (3音): 80(ON), 160(OFF), 80(ON), 160(OFF), 240(ON), 80(OFF) = 800ms
+// 4小節目 (4音): 80(ON), 160(OFF), 80(ON), 160(OFF),  80(ON), 80(OFF), 280(ON: フィニッシュ長音) = 920ms
+static const uint32_t s_sunshine_durations[] = {
+    80, 160, 80, 160, 240, 80,
+    80, 160, 80, 160,  80, 80, 240, 80,
+    80, 160, 80, 160, 240, 80,
+    80, 160, 80, 160,  80, 80, 280
 };
-#endif
+static const VibePattern s_sunshine_pattern = {
+    .durations = s_sunshine_durations,
+    .num_segments = ARRAY_LENGTH(s_sunshine_durations),
+};
+
+static AppTimer *s_vibe_busy_timer = NULL;
+static int s_current_vibe_cmd = 0;
+
+static void vibe_busy_timer_callback(void *context) {
+    s_vibe_busy_timer = NULL;
+    s_current_vibe_cmd = 0;
+}
+
+static void cancel_vibe_chain(void) {
+    if (s_vibe_busy_timer) {
+        app_timer_cancel(s_vibe_busy_timer);
+        s_vibe_busy_timer = NULL;
+    }
+    s_current_vibe_cmd = 0;
+    vibes_cancel();
+}
+
+static void trigger_vader_theme(void) {
+    if (s_current_vibe_cmd == 21) {
+        return; // すでに帝国のマーチ演奏中なら多重起動・リセットを完全遮断
+    }
+    cancel_vibe_chain();
+    s_current_vibe_cmd = 21;
+    vibes_enqueue_custom_pattern(s_vader_pattern);
+    // 全体演奏時間(3,900ms)の間ロックを維持
+    s_vibe_busy_timer = app_timer_register(3900, vibe_busy_timer_callback, NULL);
+}
+
+static void trigger_sunshine_theme(void) {
+    if (s_current_vibe_cmd == 22) {
+        return; // すでにWalking on Sunshine演奏中なら多重起動・リセットを完全遮断
+    }
+    cancel_vibe_chain();
+    s_current_vibe_cmd = 22;
+    vibes_enqueue_custom_pattern(s_sunshine_pattern);
+    // 全体演奏時間(3,480ms)の間ロックを維持
+    s_vibe_busy_timer = app_timer_register(3480, vibe_busy_timer_callback, NULL);
+}
 
 static CompanionType s_companion_type = COMPANION_TYPE_UNKNOWN;
 
@@ -469,37 +528,31 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
     if (received_cmd != 0 || received_alert_msg != NULL) {
         const char *display_msg = received_alert_msg;
-#if defined(PBL_PLATFORM_APLITE)
-        if (received_cmd == 10 || received_cmd == 21) {
-            vibes_long_pulse();
-            if (!display_msg && received_cmd == 21) display_msg = "HR TOO HIGH!";
-        } else if (received_cmd == 11 || received_cmd == 20) {
-            vibes_double_pulse();
-            if (!display_msg && received_cmd == 20) display_msg = "HR IN ZONE";
-        } else if (received_cmd == 22) {
-            vibes_short_pulse();
-            if (!display_msg) display_msg = "HR TOO LOW!";
-        } else if (display_msg) {
-            vibes_short_pulse();
-        }
-#else
         if (received_cmd == 10) {
+            cancel_vibe_chain();
             vibes_long_pulse();
         } else if (received_cmd == 11) {
+            cancel_vibe_chain();
             vibes_double_pulse();
         } else if (received_cmd == 20) {
-            vibes_enqueue_custom_pattern(s_vibe_in_zone);
+            // テーマ曲（21/22）演奏中は、軽微なIN ZONE通知でブツ切りにせず最後まで鳴らし切る
+            if (s_current_vibe_cmd != 21 && s_current_vibe_cmd != 22) {
+                cancel_vibe_chain();
+                vibes_enqueue_custom_pattern(s_vibe_in_zone);
+            }
             if (!display_msg) display_msg = "HR IN ZONE";
         } else if (received_cmd == 21) {
-            vibes_enqueue_custom_pattern(s_vibe_too_high);
+            trigger_vader_theme();
             if (!display_msg) display_msg = "HR TOO HIGH!";
         } else if (received_cmd == 22) {
-            vibes_enqueue_custom_pattern(s_vibe_too_low);
+            trigger_sunshine_theme();
             if (!display_msg) display_msg = "HR TOO LOW!";
         } else if (display_msg) {
-            vibes_short_pulse();
+            if (s_current_vibe_cmd != 21 && s_current_vibe_cmd != 22) {
+                cancel_vibe_chain();
+                vibes_short_pulse();
+            }
         }
-#endif
 
         if (display_msg && display_msg[0] != '\0') {
 #if defined(PBL_COLOR)

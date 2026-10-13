@@ -12,9 +12,12 @@ static GColor s_current_bg, s_current_fg;
 #else
 #define MAX_MAP_RLE_SIZE 8192
 #endif
+#define MAP_CHUNK_SIZE 500
 static uint8_t s_map_rle_data[MAX_MAP_RLE_SIZE];
 static int s_map_rle_len = 0;
 static bool s_has_received_data = false;
+static uint32_t s_received_chunks_mask = 0;
+static int s_expected_total_chunks = 0;
 
 // 時計・タイマーバッファポインタ
 static const char *s_clock_ptr = NULL;
@@ -280,6 +283,8 @@ void ui_map_destroy(void) {
     s_is_map_active = false;
     s_has_received_data = false;
     s_map_rle_len = 0;
+    s_received_chunks_mask = 0;
+    s_expected_total_chunks = 0;
     if (s_map_layer) {
         layer_destroy(s_map_layer);
         s_map_layer = NULL;
@@ -291,19 +296,30 @@ bool ui_map_is_active(void) {
 }
 
 void ui_map_update_data(const uint8_t *data, int length, int chunk_idx, int total_chunks) {
-    if (chunk_idx == 0) {
+    if (chunk_idx == 0 || s_expected_total_chunks != total_chunks) {
         s_map_rle_len = 0;
         s_has_received_data = false;
+        s_received_chunks_mask = 0;
+        s_expected_total_chunks = total_chunks;
     }
-    if (s_map_rle_len + length <= MAX_MAP_RLE_SIZE) {
-        memcpy(s_map_rle_data + s_map_rle_len, data, length);
-        s_map_rle_len += length;
+    if (chunk_idx >= 0 && chunk_idx < total_chunks && chunk_idx < 32) {
+        int offset = chunk_idx * MAP_CHUNK_SIZE;
+        if (offset + length <= MAX_MAP_RLE_SIZE) {
+            memcpy(s_map_rle_data + offset, data, length);
+            s_received_chunks_mask |= (1UL << chunk_idx);
+            if (offset + length > s_map_rle_len) {
+                s_map_rle_len = offset + length;
+            }
+        }
     }
-    // 全チャンクが揃った時点で初めて描画フラグを立てて画面更新（途中描画による砂嵐を完全防止）
-    if (chunk_idx == total_chunks - 1) {
-        s_has_received_data = true;
-        if (s_map_layer) {
-            layer_mark_dirty(s_map_layer);
+    // 全チャンクが1つも欠けずに揃った場合のみ描画フラグを立てて更新（欠落時の砂嵐を完全防止）
+    if (total_chunks > 0 && total_chunks <= 32) {
+        uint32_t full_mask = (total_chunks == 32) ? 0xFFFFFFFFUL : ((1UL << total_chunks) - 1UL);
+        if (s_received_chunks_mask == full_mask) {
+            s_has_received_data = true;
+            if (s_map_layer) {
+                layer_mark_dirty(s_map_layer);
+            }
         }
     }
 }
