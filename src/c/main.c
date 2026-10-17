@@ -37,7 +37,9 @@ static bool s_is_round_screen = false;
 static bool s_is_long_workout = false;
 static bool s_has_hr_sensor = false; 
 
+#if defined(PBL_HEALTH)
 static int s_current_hr = 0;
+#endif
 static ActivityType s_current_activity = ACTIVITY_RUNNING;
 static int s_selected_color_idx = 63; // GColorWhiteARGB8
 
@@ -47,6 +49,7 @@ static AppTimer *s_ignore_single_click_timer = NULL;
 static bool s_ignore_single_click = false;
 static uint64_t s_long_click_start_time = 0;
 static bool s_map_is_heading_up = false;
+static bool s_is_discard_confirm = false;
 
 /* ==========================================================
    プロトタイプ宣言
@@ -238,7 +241,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
         ui_activity_picker_handle_up();
         return;
     }
-    if (s_ignore_single_click) return;
+    if (s_ignore_single_click || s_is_discard_confirm) return;
 
     if (s_app_state == 0) {
         // IDLE時にUPを押したら即座に状態1(SEARCHING GPS...)へ楽観的UI更新
@@ -324,6 +327,12 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     }
     if (s_ignore_single_click) return;
 
+    if (s_is_discard_confirm) {
+        comm_service_send_button_event(EVENT_BUTTON_DOWN_CLICK);
+        vibes_short_pulse();
+        return;
+    }
+
     if (s_app_state == 3) {
         int mid_count = graph_data_get_mid_page_count();
         if (mid_count > 0) {
@@ -352,7 +361,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         }
         update_ui_state();
         vibes_short_pulse();
-    } else {
+    } else if (s_app_state != 5) {
         comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK);
         vibes_short_pulse();
     }
@@ -387,7 +396,15 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
         ui_activity_picker_handle_down();
         return;
     }
-    if (s_ignore_single_click) return;
+    if (s_ignore_single_click || s_is_discard_confirm) return;
+
+    if (s_app_state == 5) {
+        s_is_discard_confirm = true;
+        ui_marquee_destroy_force();
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
 
     if (s_app_state == 3) {
         int lower_count = graph_data_get_lower_page_count();
@@ -415,7 +432,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void generic_long_click_down_handler(ClickRecognizerRef recognizer, void *context) {
-    bool ignore = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
+    bool ignore = s_is_discard_confirm || ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
     ignore = ignore || ui_color_picker_is_active();
 #endif
@@ -427,7 +444,7 @@ static void generic_long_click_down_handler(ClickRecognizerRef recognizer, void 
 
 static void up_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_map_is_active()) return;
-    bool ignore = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
+    bool ignore = s_is_discard_confirm || ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
     ignore = ignore || ui_color_picker_is_active();
 #endif
@@ -446,7 +463,7 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
         // マップ表示中の長押しリセットは廃止
         return;
     }
-    bool ignore = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
+    bool ignore = s_is_discard_confirm || ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
     ignore = ignore || ui_color_picker_is_active();
 #endif
@@ -462,7 +479,7 @@ static void select_long_click_release_handler(ClickRecognizerRef recognizer, voi
 
 static void down_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_map_is_active()) return;
-    bool ignore = ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
+    bool ignore = s_is_discard_confirm || ui_activity_picker_is_active() || ui_course_picker_is_active() || ui_intermediate_menu_is_active();
 #if defined(PBL_COLOR)
     ignore = ignore || ui_color_picker_is_active();
 #endif
@@ -477,6 +494,12 @@ static void down_long_click_release_handler(ClickRecognizerRef recognizer, void 
 }
 
 static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
+    if (s_is_discard_confirm) {
+        s_is_discard_confirm = false;
+        update_ui_state();
+        vibes_short_pulse();
+        return;
+    }
     if (ui_map_is_active()) {
         ui_map_destroy();
         comm_service_send_map_state(0);
@@ -644,7 +667,7 @@ static void time_layer_update_callback(Layer *layer, GContext *ctx) {
 }
 
 static void mid_bg_layer_update_callback(Layer *layer, GContext *ctx) {
-    ui_mid_bg_layer_update_proc(layer, ctx, s_app_state, s_current_main_bg, s_current_main_fg, s_is_paused, s_current_hr);
+    ui_mid_bg_layer_update_proc(layer, ctx, s_app_state, s_current_main_bg, s_current_main_fg, s_is_discard_confirm);
 }
 
 static void on_graph_dirty_request(void) {
@@ -655,6 +678,10 @@ static void on_graph_dirty_request(void) {
    UI状態更新関数
    ========================================================== */
 static void update_ui_state(void) {
+    if (s_app_state != 5) {
+        s_is_discard_confirm = false;
+    }
+
     GColor pc = GColorWhite;
 #if defined(PBL_COLOR)
     pc = (GColor){.argb = ui_color_picker_get_personal_color_argb()};
@@ -707,11 +734,11 @@ static void update_ui_state(void) {
 
     // 中段コックピット背景・グラフ・ActionBarの完全非表示制御
     if (s_mid_bg_layer) layer_set_hidden(s_mid_bg_layer, hide_pickers);
-    if (s_graph_layer) layer_set_hidden(s_graph_layer, hide_pickers);
+    if (s_graph_layer) layer_set_hidden(s_graph_layer, hide_pickers || s_is_discard_confirm);
     // ActionBar is always kept visible with transparent background in map mode
 
     // 中段テキストレイヤーの表示制御
-    bool hide_mid = hide_pickers || !graph_data_is_detail_mode(s_app_state);
+    bool hide_mid = hide_pickers || s_is_discard_confirm || !graph_data_is_detail_mode(s_app_state);
     if (s_dist_layer) layer_set_hidden(text_layer_get_layer(s_dist_layer), hide_mid);
     if (s_step_layer) layer_set_hidden(text_layer_get_layer(s_step_layer), hide_mid);
     if (!s_has_hr_sensor) {
@@ -722,7 +749,7 @@ static void update_ui_state(void) {
     if (s_clock_layer) layer_set_hidden(text_layer_get_layer(s_clock_layer), hide_mid);
 
     if (!ui_marquee_is_custom()) {
-        if ((s_app_state < 3 || s_app_state >= 5) && !hide_pickers) {
+        if ((s_app_state < 3 || s_app_state >= 5) && !hide_pickers && !s_is_discard_confirm) {
             ui_marquee_trigger(s_app_state, s_current_main_fg, s_current_main_bg);
         } else {
             ui_marquee_destroy();
@@ -767,7 +794,11 @@ static void update_ui_state(void) {
                 } else if (s_app_state == 4) { 
                     update_action_bar_icons(use_black_icons, ACTION_ICON_PLAY, ACTION_ICON_STOP, ACTION_ICON_GRAPH);
                 } else if (s_app_state == 5) { 
-                    update_action_bar_icons(use_black_icons, ACTION_ICON_SAVE, ACTION_ICON_NONE, ACTION_ICON_TRASH);
+                    if (s_is_discard_confirm) {
+                        update_action_bar_icons(use_black_icons, ACTION_ICON_NONE, ACTION_ICON_TRASH, ACTION_ICON_NONE);
+                    } else {
+                        update_action_bar_icons(use_black_icons, ACTION_ICON_SAVE, ACTION_ICON_NONE, ACTION_ICON_TRASH);
+                    }
                 } else if (s_app_state == 6) { 
                     update_action_bar_icons(use_black_icons, ACTION_ICON_NONE, ACTION_ICON_CHECK, ACTION_ICON_GRAPH);
                 }

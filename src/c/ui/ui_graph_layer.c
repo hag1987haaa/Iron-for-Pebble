@@ -281,7 +281,7 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
     }
 }
 
-void ui_mid_bg_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, GColor main_bg, GColor main_fg, bool is_paused, int current_hr) {
+void ui_mid_bg_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, GColor main_bg, GColor main_fg, bool is_discard_confirm) {
     GRect b = layer_get_bounds(layer);
     graphics_context_set_stroke_color(ctx, main_fg);
     graphics_context_set_fill_color(ctx, main_fg);
@@ -328,6 +328,21 @@ void ui_mid_bg_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state,
     rx = ((wt - ACTION_BAR_WIDTH) / 2) + 22;
 #endif
 
+#if defined(PBL_ROUND)
+    int active_w = wt;
+#else
+    int active_w = wt - ACTION_BAR_WIDTH;
+#endif
+
+    if (is_discard_confirm) {
+        graphics_draw_line(ctx, GPoint(mx, upper_h), GPoint(wt - ACTION_BAR_WIDTH - mx, upper_h));
+        GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+        graphics_draw_text(ctx, "DISCARD DATA?", font, GRect(0, upper_h + 4, active_w, 24), 0, GTextAlignmentCenter, NULL);
+        graphics_draw_text(ctx, "[SELECT] Discard", font, GRect(0, upper_h + (mid_h * 2) / 3, active_w, 24), 0, GTextAlignmentCenter, NULL);
+        graphics_draw_text(ctx, "[BACK] Cancel", font, GRect(0, upper_h + mid_h + 6, active_w, 24), 0, GTextAlignmentCenter, NULL);
+        return;
+    }
+
     int fill_w = wt;
     bool is_active = (app_state == 3);
 
@@ -344,11 +359,6 @@ void ui_mid_bg_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state,
     if (!graph_data_is_detail_mode(app_state)) {
         const MidPageData *page = graph_data_get_current_mid_page();
         if (page) {
-#if defined(PBL_ROUND)
-            int active_w = wt;
-#else
-            int active_w = wt - ACTION_BAR_WIDTH;
-#endif
             ui_metric_render_page(ctx, GRect(0, upper_h, active_w, mid_h), page, true, main_bg, main_fg, wt);
         }
         return;
