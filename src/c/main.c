@@ -243,10 +243,12 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (s_app_state == 0) {
         // IDLE時にUPを押したら即座に状態1(SEARCHING GPS...)へ楽観的UI更新
         s_app_state = 1;
+        s_is_paused = true;
         update_ui_state();
     } else if (s_app_state == 2) {
         // READY時にUPを押したら即座に状態3(ACTIVE)へ楽観的UI更新
         s_app_state = 3;
+        s_is_paused = false;
         update_ui_state();
     }
 
@@ -814,9 +816,6 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
             ui_map_mark_dirty();
         }
     }
-    
-    // デモトグルはテストのため一時停止 (falseに固定)
-    s_is_long_workout = false;
 
 #if defined(PBL_HEALTH)
     static int last_hr_display = -1;
@@ -1277,13 +1276,15 @@ static void main_window_load(Window *window) {
 }
 
 static void main_window_unload(Window *window) {
-    ui_marquee_destroy();
+    graph_data_save_to_persist();
+    ui_marquee_deinit();
     
     if (s_ignore_single_click_timer) {
         app_timer_cancel(s_ignore_single_click_timer);
         s_ignore_single_click_timer = NULL;
     }
 
+    ui_map_destroy();
     ui_activity_picker_destroy();
     ui_course_picker_destroy();
     ui_intermediate_menu_destroy();
@@ -1324,6 +1325,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
+    comm_service_deinit();
 #if defined(PBL_HEALTH)
     if (s_has_hr_sensor) {
         health_service_set_heart_rate_sample_period(0);

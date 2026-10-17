@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "../app_state.h"
 #include "graph_data.h"
 
@@ -6,6 +6,7 @@ typedef void (*CommServiceUIUpdateCallback)(void);
 typedef void (*CommServiceGraphDirtyCallback)(void);
 
 void comm_service_init(CommServiceUIUpdateCallback ui_update_cb, CommServiceGraphDirtyCallback graph_dirty_cb);
+void comm_service_deinit(void);
 void comm_service_send_map_state(int state);
 bool comm_service_is_map_open_requested(void);
 void comm_service_clear_map_open_request(void);

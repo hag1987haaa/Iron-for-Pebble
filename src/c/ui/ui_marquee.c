@@ -8,12 +8,14 @@ static TextLayer *s_msg_layer = NULL;
 static Layer *s_msg_container_layer = NULL;
 static PropertyAnimation *s_marquee_anim = NULL;
 static AppTimer *s_marquee_timer = NULL;
+static bool s_is_marquee_visible = false;
 static bool s_is_custom_marquee = false;
 static GColor s_current_fg, s_current_bg;
 static uint8_t s_current_app_state = 0;
 
 static void marquee_timer_callback(void *context);
 static void create_marquee_layers(void);
+static void show_marquee_layers(void);
 
 static void msg_container_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_fill_color(ctx, s_current_bg);
@@ -24,6 +26,11 @@ void ui_marquee_init(Window *window, ActionBarLayer *action_bar, Layer *graph_la
     s_window = window;
     s_action_bar = action_bar;
     s_graph_layer = graph_layer;
+    create_marquee_layers();
+    if (s_msg_container_layer) {
+        layer_set_hidden(s_msg_container_layer, true);
+    }
+    s_is_marquee_visible = false;
 }
 
 void ui_marquee_set_action_bar(ActionBarLayer *action_bar) {
@@ -36,8 +43,10 @@ void ui_marquee_set_graph_layer(Layer *graph_layer) {
 
 void ui_marquee_stop(void) {
     if (s_marquee_anim) {
-        animation_unschedule(property_animation_get_animation(s_marquee_anim));
+        PropertyAnimation *anim_to_destroy = s_marquee_anim;
         s_marquee_anim = NULL;
+        animation_unschedule(property_animation_get_animation(anim_to_destroy));
+        property_animation_destroy(anim_to_destroy);
     }
     if (s_marquee_timer) {
         app_timer_cancel(s_marquee_timer);
@@ -47,14 +56,10 @@ void ui_marquee_stop(void) {
 
 void ui_marquee_destroy_force(void) {
     ui_marquee_stop();
-    if (s_msg_layer) {
-        text_layer_destroy(s_msg_layer);
-        s_msg_layer = NULL;
+    if (s_msg_container_layer && s_is_marquee_visible) {
+        layer_set_hidden(s_msg_container_layer, true);
     }
-    if (s_msg_container_layer) {
-        layer_destroy(s_msg_container_layer);
-        s_msg_container_layer = NULL;
-    }
+    s_is_marquee_visible = false;
     s_is_custom_marquee = false;
     if (s_graph_layer) layer_mark_dirty(s_graph_layer);
 }
@@ -66,7 +71,21 @@ void ui_marquee_destroy(void) {
     ui_marquee_destroy_force();
 }
 
-bool ui_marquee_is_active(void) { return (s_msg_container_layer != NULL); }
+void ui_marquee_deinit(void) {
+    ui_marquee_stop();
+    if (s_msg_layer) {
+        text_layer_destroy(s_msg_layer);
+        s_msg_layer = NULL;
+    }
+    if (s_msg_container_layer) {
+        layer_destroy(s_msg_container_layer);
+        s_msg_container_layer = NULL;
+    }
+    s_is_marquee_visible = false;
+    s_is_custom_marquee = false;
+}
+
+bool ui_marquee_is_active(void) { return (s_msg_container_layer != NULL && s_is_marquee_visible); }
 bool ui_marquee_is_custom(void) { return s_is_custom_marquee; }
 
 static void create_marquee_layers(void) {
@@ -115,13 +134,28 @@ static void create_marquee_layers(void) {
     text_layer_set_font(s_msg_layer, marquee_font);
     text_layer_set_background_color(s_msg_layer, GColorClear);
     layer_add_child(s_msg_container_layer, text_layer_get_layer(s_msg_layer));
+}
 
-    if (s_graph_layer) layer_mark_dirty(s_graph_layer);
+static void show_marquee_layers(void) {
+    create_marquee_layers();
+    if (!s_msg_container_layer) return;
+    if (s_action_bar) {
+        layer_insert_below_sibling(s_msg_container_layer, action_bar_layer_get_layer(s_action_bar));
+    }
+    if (!s_is_marquee_visible) {
+        s_is_marquee_visible = true;
+        layer_set_hidden(s_msg_container_layer, false);
+        if (s_graph_layer) layer_mark_dirty(s_graph_layer);
+    } else {
+        layer_mark_dirty(s_msg_container_layer);
+    }
 }
 
 static void anim_stopped_handler(Animation *animation, bool finished, void *context) {
     if (s_marquee_anim && property_animation_get_animation(s_marquee_anim) == animation) {
+        PropertyAnimation *anim_to_destroy = s_marquee_anim;
         s_marquee_anim = NULL;
+        property_animation_destroy(anim_to_destroy);
     }
     
     if (finished && (s_current_app_state == 5 || s_current_app_state == 6)) {
@@ -154,16 +188,17 @@ static void custom_msg_timer_callback(void *context) {
 }
 
 void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color, uint8_t app_state) {
+    if (!msg) return;
     s_current_fg = fg_color;
     s_current_bg = bg_color;
     s_current_app_state = app_state;
     s_is_custom_marquee = true;
     
-    create_marquee_layers();
     ui_marquee_stop();
+    show_marquee_layers();
     if (!s_msg_layer || !s_msg_container_layer || !s_window) return;
     
-    #if defined(PBL_PLATFORM_APLITE)
+#if defined(PBL_PLATFORM_APLITE)
     static char custom_msg_buf[16];
 #else
     static char custom_msg_buf[64];
@@ -197,9 +232,6 @@ void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {
         return;
     }
 
-    create_marquee_layers();
-    ui_marquee_stop();
-    
     static const char * const s_state_msgs[7] = {
         "PRESS [UP] TO START...",
         "SEARCHING GPS ...",
@@ -211,6 +243,10 @@ void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {
     };
     if (s_current_app_state >= 7 || !s_state_msgs[s_current_app_state]) return;
     const char *msg = s_state_msgs[s_current_app_state];
+
+    ui_marquee_stop();
+    show_marquee_layers();
+    if (!s_msg_layer || !s_msg_container_layer || !s_window) return;
     
     text_layer_set_text(s_msg_layer, msg);
     text_layer_set_text_color(s_msg_layer, s_current_fg);

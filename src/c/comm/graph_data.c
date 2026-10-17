@@ -40,7 +40,11 @@ void graph_data_save_to_persist(void) {
 }
 
 void graph_data_load_from_persist(ActivityType *out_activity, int *out_color_idx) {
-    if (persist_exists(PK_GRAPH_COUNT)) s_graph_count = persist_read_int(PK_GRAPH_COUNT);
+    if (persist_exists(PK_GRAPH_COUNT)) {
+        s_graph_count = persist_read_int(PK_GRAPH_COUNT);
+        if (s_graph_count < 0) s_graph_count = 0;
+        if (s_graph_count > MAX_GRAPH_DATA) s_graph_count = MAX_GRAPH_DATA;
+    }
     if (persist_exists(PK_GRAPH_DATA)) persist_read_data(PK_GRAPH_DATA, s_graph_data, sizeof(s_graph_data));
     if (persist_exists(PK_GRAPH_ID)) s_graph_id = persist_read_int(PK_GRAPH_ID);
     if (persist_exists(PK_GRAPH_SCALE)) s_graph_scale = persist_read_int(PK_GRAPH_SCALE);
@@ -69,7 +73,6 @@ void graph_data_clear(void) {
     s_graph_id = 0;
     s_graph_scale = 1;
     memset(s_graph_data, 0, sizeof(s_graph_data));
-    graph_data_save_to_persist();
 }
 
 void graph_data_parse_hybrid(const char *input) {

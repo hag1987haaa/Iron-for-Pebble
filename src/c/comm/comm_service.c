@@ -372,36 +372,45 @@ void comm_service_send_course_toggle(bool is_enabled, const char *course_name) {
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
-    Tuple *t = dict_read_first(iterator);
     bool should_update_ui = false;
     int received_cmd = 0;
     const char *received_alert_msg = NULL;
 
+    // 状態遷移(MESSAGE_KEY_STATE)が含まれている場合は最優先で適用し、
+    // 同一パケット内のMESSAGE_KEY_TIME等が新しい状態に基づいて処理されるようにする
+    Tuple *t_state = dict_find(iterator, MESSAGE_KEY_STATE);
+    if (t_state && s_app_state_ptr) {
+        uint8_t new_state = (uint8_t)app_get_int_from_tuple(t_state);
+        if (s_is_paused_ptr) *s_is_paused_ptr = (new_state != 3);
+        if (*s_app_state_ptr != new_state) {
+            *s_app_state_ptr = new_state;
+            if (new_state == 0 || new_state == 1 || new_state == 2) {
+                comm_service_reset_elapsed_seconds();
+                s_map_transfer_in_progress = false;
+                graph_data_clear();
+            }
+            should_update_ui = true;
+        }
+    }
+
+    Tuple *t = dict_read_first(iterator);
     while (t != NULL) {
         if (t->key == MESSAGE_KEY_CMD) {
             received_cmd = (int)app_get_int_from_tuple(t);
         }
         else if (t->key == MESSAGE_KEY_KEY_ALERT_MSG) {
-            received_alert_msg = t->value->cstring;
+            if (t->type == TUPLE_CSTRING && t->length > 0) {
+                received_alert_msg = t->value->cstring;
+            }
         }
         else if (t->key == MESSAGE_KEY_KEY_COMPANION_TYPE) {
             s_companion_type = (CompanionType)app_get_int_from_tuple(t);
         }
-        else if (t->key == MESSAGE_KEY_STATE && s_app_state_ptr) {
-            uint8_t new_state = (uint8_t)app_get_int_from_tuple(t);
-            if (*s_app_state_ptr != new_state) {
-                *s_app_state_ptr = new_state;
-                if (s_is_paused_ptr) *s_is_paused_ptr = (*s_app_state_ptr == 4 || *s_app_state_ptr == 5 || *s_app_state_ptr == 6);
-                if (new_state == 0 || new_state == 1 || new_state == 2) {
-                    comm_service_reset_elapsed_seconds();
-                    s_map_transfer_in_progress = false;
-                    graph_data_clear();
-                }
-                should_update_ui = true;
-            }
+        else if (t->key == MESSAGE_KEY_STATE) {
+            // 先行処理済み
         }
         else if (t->key == MESSAGE_KEY_TIME) {
-            const char *raw = t->value->cstring;
+            const char *raw = (t->type == TUPLE_CSTRING && t->length > 0) ? t->value->cstring : NULL;
             if (raw && strlen(raw) >= 5 && s_time_min_buf && s_time_sec_buf) {
                 uint32_t rx_sec = parse_formatted_time(raw);
                 uint8_t state = s_app_state_ptr ? *s_app_state_ptr : 0;
@@ -426,14 +435,14 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             }
         }
         else if (t->key == MESSAGE_KEY_DISTANCE) {
-            if (s_dist_buf) {
+            if (s_dist_buf && t->type == TUPLE_CSTRING && t->length > 0) {
                 snprintf(s_dist_buf, 16, "%s", t->value->cstring);
                 if (s_dist_layer) text_layer_set_text(s_dist_layer, s_dist_buf);
             }
         }
         else if (t->key == KEY_STEPS) {
             if (s_step_buf) {
-                if (t->type == TUPLE_CSTRING) {
+                if (t->type == TUPLE_CSTRING && t->length > 0) {
                     snprintf(s_step_buf, 16, "%s", t->value->cstring);
                 } else {
                     int ds = app_get_int_from_tuple(t);
@@ -443,24 +452,29 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                 if (s_step_layer) text_layer_set_text(s_step_layer, s_step_buf);
             }
         }
-        else if (t->key == MESSAGE_KEY_HR && s_has_hr_sensor) {
-            if (s_hr_buf) {
+        else if (t->key == KEY_HR && s_has_hr_sensor) {
+            if (s_hr_buf && t->type == TUPLE_CSTRING && t->length > 0) {
                 snprintf(s_hr_buf, 16, "%s", t->value->cstring);
                 if (s_hr_layer) text_layer_set_text(s_hr_layer, s_hr_buf);
             }
         }
         else if (t->key == MESSAGE_KEY_GRAPH_DATA) {
-            graph_data_parse_hybrid(t->value->cstring);
-            graph_data_save_to_persist();
-            if (s_graph_dirty_cb) s_graph_dirty_cb();
+            if (t->type == TUPLE_CSTRING) {
+                graph_data_parse_hybrid(t->value->cstring);
+                if (s_graph_dirty_cb) s_graph_dirty_cb();
+            }
         }
         else if (t->key == MESSAGE_KEY_MID_DATA) {
-            graph_data_parse_mid(t->value->cstring);
-            should_update_ui = true;
+            if (t->type == TUPLE_CSTRING) {
+                graph_data_parse_mid(t->value->cstring);
+                should_update_ui = true;
+            }
         }
         else if (t->key == MESSAGE_KEY_LOWER_DATA) {
-            graph_data_parse_lower(t->value->cstring);
-            should_update_ui = true;
+            if (t->type == TUPLE_CSTRING) {
+                graph_data_parse_lower(t->value->cstring);
+                should_update_ui = true;
+            }
         }
         else if (t->key == MESSAGE_KEY_MID_ID) {
             int target_id = (int)app_get_int_from_tuple(t);
@@ -475,8 +489,10 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         else if (t->key == MESSAGE_KEY_ACTIVITY_TYPE && s_current_activity_ptr) {
             int received_type = app_get_int_from_tuple(t);
             if(received_type >= 0 && received_type < ACTIVITY_COUNT) {
-                *s_current_activity_ptr = (ActivityType)received_type;
-                persist_write_int(PK_ACTIVITY_TYPE, *s_current_activity_ptr);
+                if (*s_current_activity_ptr != (ActivityType)received_type) {
+                    *s_current_activity_ptr = (ActivityType)received_type;
+                    persist_write_int(PK_ACTIVITY_TYPE, *s_current_activity_ptr);
+                }
                 should_update_ui = true;
             }
         }
@@ -497,7 +513,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         }
 #endif
         else if (t->key == MESSAGE_KEY_KEY_COURSES_DATA) {
-            const char *raw_courses = t->value->cstring;
+            const char *raw_courses = (t->type == TUPLE_CSTRING) ? t->value->cstring : NULL;
             if (raw_courses) {
                 ui_course_picker_parse_and_set(raw_courses);
                 should_update_ui = true;
@@ -603,4 +619,17 @@ void comm_service_init(CommServiceUIUpdateCallback ui_update_cb, CommServiceGrap
 #else
     app_message_open(1024, 256);
 #endif
+}
+
+void comm_service_deinit(void) {
+    cancel_vibe_chain();
+    if (s_button_retry_timer) {
+        app_timer_cancel(s_button_retry_timer);
+        s_button_retry_timer = NULL;
+    }
+    if (s_sync_retry_timer) {
+        app_timer_cancel(s_sync_retry_timer);
+        s_sync_retry_timer = NULL;
+    }
+    s_pending_button_event = EVENT_NONE;
 }
