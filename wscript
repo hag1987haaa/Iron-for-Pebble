@@ -37,6 +37,8 @@ def build(ctx):
 
     for p in ctx.env.TARGET_PLATFORMS:
         ctx.set_env(ctx.all_envs[p])
+        ctx.env.append_unique('CFLAGS', ['-ffunction-sections', '-fdata-sections'])
+        ctx.env.append_unique('LINKFLAGS', ['-Wl,--gc-sections'])
         ctx.set_group(ctx.env.PLATFORM_NAME)
         app_elf = '{}/pebble-app.elf'.format(ctx.env.BUILD_DIR)
         ctx.pbl_program(source=ctx.path.ant_glob('src/c/**/*.c'), target=app_elf)

@@ -26,10 +26,12 @@ void ui_marquee_init(Window *window, ActionBarLayer *action_bar, Layer *graph_la
     s_window = window;
     s_action_bar = action_bar;
     s_graph_layer = graph_layer;
+#if !defined(PBL_PLATFORM_APLITE)
     create_marquee_layers();
     if (s_msg_container_layer) {
         layer_set_hidden(s_msg_container_layer, true);
     }
+#endif
     s_is_marquee_visible = false;
 }
 
@@ -56,9 +58,20 @@ void ui_marquee_stop(void) {
 
 void ui_marquee_destroy_force(void) {
     ui_marquee_stop();
+#if defined(PBL_PLATFORM_APLITE)
+    if (s_msg_layer) {
+        text_layer_destroy(s_msg_layer);
+        s_msg_layer = NULL;
+    }
+    if (s_msg_container_layer) {
+        layer_destroy(s_msg_container_layer);
+        s_msg_container_layer = NULL;
+    }
+#else
     if (s_msg_container_layer && s_is_marquee_visible) {
         layer_set_hidden(s_msg_container_layer, true);
     }
+#endif
     s_is_marquee_visible = false;
     s_is_custom_marquee = false;
     if (s_graph_layer) layer_mark_dirty(s_graph_layer);
@@ -217,7 +230,7 @@ void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color
 #endif
     
     layer_set_frame(text_layer_get_layer(s_msg_layer), GRect(0, -2, w, layer_get_bounds(s_msg_container_layer).size.h));
-    s_marquee_timer = app_timer_register(3500, custom_msg_timer_callback, NULL);
+    s_marquee_timer = app_timer_register(5000, custom_msg_timer_callback, NULL);
 }
 
 void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {

@@ -103,14 +103,13 @@ void graph_data_parse_hybrid(const char *input) {
     s_graph_count = idx;
 }
 
-/* 中段データパース（新旧両対応） */
-void graph_data_parse_mid(const char *input) {
-    s_mid_page_count = 0;
+static void parse_page_list(const char *input, MidPageData *pages, int max_pages, int *out_count, int target_id, int *inout_mode, bool is_mid) {
+    *out_count = 0;
     if (!input || input[0] == '\0') return;
     const char *p = input;
 
-    while (*p && s_mid_page_count < MAX_MID_PAGES) {
-        MidPageData *page = &s_mid_pages[s_mid_page_count];
+    while (*p && *out_count < max_pages) {
+        MidPageData *page = &pages[*out_count];
         char token1[16];
         app_extract_token(&p, token1, sizeof(token1));
 
@@ -124,80 +123,44 @@ void graph_data_parse_mid(const char *input) {
             page->icon_id = 0;
         } else {
             // 旧形式互換
-            page->id = s_mid_page_count + 1;
+            page->id = *out_count + 1;
             snprintf(page->name, sizeof(page->name), "%s", token1);
             app_extract_token(&p, page->value, sizeof(page->value));
             app_extract_token(&p, page->unit, sizeof(page->unit));
             char icon_str[8];
             app_extract_token(&p, icon_str, sizeof(icon_str));
             page->icon_id = atoi(icon_str);
-            if (page->name[0] == '\0' && strcmp(page->value, "DETAIL") == 0) {
+            if (is_mid && page->name[0] == '\0' && strcmp(page->value, "DETAIL") == 0) {
                 page->id = 0; // DETAIL画面はID:0
             }
         }
-        s_mid_page_count++;
+        (*out_count)++;
     }
     bool found_target = false;
-    if (s_target_mid_id != -1) {
-        for (int i = 0; i < s_mid_page_count; i++) {
-            if (s_mid_pages[i].id == s_target_mid_id) {
-                s_current_mid_mode = i;
+    if (target_id != -1) {
+        for (int i = 0; i < *out_count; i++) {
+            if (pages[i].id == target_id) {
+                *inout_mode = i;
                 found_target = true;
                 break;
             }
         }
     }
     if (!found_target) {
-        if (s_mid_page_count == 0 || s_current_mid_mode >= s_mid_page_count) {
-            s_current_mid_mode = 0;
+        if (*out_count == 0 || *inout_mode >= *out_count) {
+            *inout_mode = 0;
         }
     }
 }
 
+/* 中段データパース（新旧両対応） */
+void graph_data_parse_mid(const char *input) {
+    parse_page_list(input, s_mid_pages, MAX_MID_PAGES, &s_mid_page_count, s_target_mid_id, &s_current_mid_mode, true);
+}
+
 /* 下段データパース（新旧両対応） */
 void graph_data_parse_lower(const char *input) {
-    s_lower_page_count = 0;
-    if (!input || input[0] == '\0') return;
-    const char *p = input;
-
-    while (*p && s_lower_page_count < MAX_LOWER_PAGES) {
-        LowerPageData *page = &s_lower_pages[s_lower_page_count];
-        char token1[16];
-        app_extract_token(&p, token1, sizeof(token1));
-
-        if (app_is_numeric_string(token1)) {
-            s_is_id_protocol_active = true;
-            page->id = atoi(token1);
-            app_extract_token(&p, page->name, sizeof(page->name));
-            app_extract_token(&p, page->value, sizeof(page->value));
-            app_extract_token(&p, page->unit, sizeof(page->unit));
-            page->icon_id = 0;
-        } else {
-            page->id = s_lower_page_count + 1;
-            snprintf(page->name, sizeof(page->name), "%s", token1);
-            app_extract_token(&p, page->value, sizeof(page->value));
-            app_extract_token(&p, page->unit, sizeof(page->unit));
-            char icon_str[8];
-            app_extract_token(&p, icon_str, sizeof(icon_str));
-            page->icon_id = atoi(icon_str);
-        }
-        s_lower_page_count++;
-    }
-    bool found_lower_target = false;
-    if (s_target_lower_id != -1) {
-        for (int i = 0; i < s_lower_page_count; i++) {
-            if (s_lower_pages[i].id == s_target_lower_id) {
-                s_current_lower_mode = i;
-                found_lower_target = true;
-                break;
-            }
-        }
-    }
-    if (!found_lower_target) {
-        if (s_lower_page_count == 0 || s_current_lower_mode >= s_lower_page_count) {
-            s_current_lower_mode = 0;
-        }
-    }
+    parse_page_list(input, s_lower_pages, MAX_LOWER_PAGES, &s_lower_page_count, s_target_lower_id, &s_current_lower_mode, false);
 }
 
 bool graph_data_is_detail_mode(uint8_t app_state) {
@@ -225,6 +188,22 @@ const char* graph_data_get_x_label(void) { return s_graph_x_label; }
 const char* graph_data_get_max_label(void) { return s_graph_max_label; }
 const char* graph_data_get_min_label(void) { return s_graph_min_label; }
 
+static bool select_page_by_id(int id, time_t last_user_time, int *target_id, uint32_t persist_key, const MidPageData *pages, int page_count, int *current_mode) {
+    // ユーザー操作から2秒以内ならスマホからの古いエコーバックを無視
+    if (time(NULL) - last_user_time < 2) {
+        return false;
+    }
+    *target_id = id;
+    persist_write_int(persist_key, id);
+    for (int i = 0; i < page_count; i++) {
+        if (pages[i].id == id) {
+            *current_mode = i;
+            return true;
+        }
+    }
+    return false;
+}
+
 // 中段データアクセサ
 int graph_data_get_mid_page_count(void) { return s_mid_page_count; }
 int graph_data_get_current_mid_mode(void) { return s_current_mid_mode; }
@@ -238,19 +217,7 @@ void graph_data_set_current_mid_mode(int mode) {
 }
 
 bool graph_data_select_mid_by_id(int id) {
-    // ユーザー操作から2秒以内ならスマホからの古いエコーバックを無視
-    if (time(NULL) - s_last_user_mid_time < 2) {
-        return false;
-    }
-    s_target_mid_id = id;
-    persist_write_int(PK_LAST_MID_ID, id);
-    for (int i = 0; i < s_mid_page_count; i++) {
-        if (s_mid_pages[i].id == id) {
-            s_current_mid_mode = i;
-            return true;
-        }
-    }
-    return false;
+    return select_page_by_id(id, s_last_user_mid_time, &s_target_mid_id, PK_LAST_MID_ID, s_mid_pages, s_mid_page_count, &s_current_mid_mode);
 }
 
 const MidPageData* graph_data_get_mid_page(int index) {
@@ -278,19 +245,7 @@ void graph_data_set_current_lower_mode(int mode) {
 }
 
 bool graph_data_select_lower_by_id(int id) {
-    // ユーザー操作から2秒以内ならスマホからの古いエコーバックを無視
-    if (time(NULL) - s_last_user_lower_time < 2) {
-        return false;
-    }
-    s_target_lower_id = id;
-    persist_write_int(PK_LAST_LOWER_ID, id);
-    for (int i = 0; i < s_lower_page_count; i++) {
-        if (s_lower_pages[i].id == id) {
-            s_current_lower_mode = i;
-            return true;
-        }
-    }
-    return false;
+    return select_page_by_id(id, s_last_user_lower_time, &s_target_lower_id, PK_LAST_LOWER_ID, s_lower_pages, s_lower_page_count, &s_current_lower_mode);
 }
 
 const LowerPageData* graph_data_get_lower_page(int index) {

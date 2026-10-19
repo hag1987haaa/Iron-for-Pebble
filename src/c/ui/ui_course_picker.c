@@ -3,16 +3,17 @@
 #include <string.h>
 
 static Layer *s_course_picker_layer = NULL;
-static Layer *s_marquee_container_layer = NULL;
-static TextLayer *s_marquee_text_layer = NULL;
-static AppTimer *s_marquee_timer = NULL;
-
 static bool s_is_course_picking = false;
 static int8_t s_selected_course_idx = 0;
 static GColor s_current_bg, s_current_fg;
 
 static CourseItem s_courses[MAX_COURSES];
 static int8_t s_course_count = 0;
+
+#if !defined(PBL_PLATFORM_APLITE)
+static Layer *s_marquee_container_layer = NULL;
+static TextLayer *s_marquee_text_layer = NULL;
+static AppTimer *s_marquee_timer = NULL;
 
 static int16_t s_marquee_offset_x = 0;
 static int16_t s_marquee_text_width = 0;
@@ -90,6 +91,10 @@ static void update_marquee_content(void) {
         s_marquee_timer = app_timer_register(MARQUEE_INTERVAL_MS, marquee_timer_callback, NULL);
     }
 }
+#else
+static void stop_marquee(void) {}
+static void update_marquee_content(void) {}
+#endif
 
 void ui_course_picker_init(void) {
     if (persist_exists(PK_COURSES_COUNT) && persist_exists(PK_COURSES_DATA)) {
@@ -218,10 +223,19 @@ static void course_picker_update_proc(Layer *layer, GContext *ctx) {
         return;
     }
 
-    char buf[32];
     int prev_y = text_h + 3;
     int sel_box_y = prev_y + 21;
     int sel_box_h = 32;
+
+#if defined(PBL_PLATFORM_APLITE)
+    graphics_context_set_fill_color(ctx, s_current_fg);
+    graphics_fill_rect(ctx, GRect(2, sel_box_y, b.size.w - 4, sel_box_h), 4, GCornersAll);
+    graphics_context_set_text_color(ctx, s_current_bg);
+    char line_buf[36];
+    snprintf(line_buf, sizeof(line_buf), "%s %s", s_courses[s_selected_course_idx].is_enabled ? "[X]" : "[ ]", s_courses[s_selected_course_idx].name);
+    graphics_draw_text(ctx, line_buf, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(6, sel_box_y + 2, b.size.w - 12, 28), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+#else
+    char buf[32];
     int next_y = sel_box_y + sel_box_h + 3;
 
     // 1. 前の項目（コースが3つ以上ある場合、または2つで選択位置が1の場合のみ表示）
@@ -260,6 +274,7 @@ static void course_picker_update_proc(Layer *layer, GContext *ctx) {
         snprintf(buf, sizeof(buf), "%s %s", s_courses[next_idx].is_enabled ? "[X]" : "[ ]", s_courses[next_idx].name);
         graphics_draw_text(ctx, buf, fonts_get_system_font(FONT_KEY_GOTHIC_18), GRect(4, next_y, b.size.w - 8, 20), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
     }
+#endif
 }
 
 void ui_course_picker_create(Window *window, ActionBarLayer *action_bar, GColor main_bg, GColor main_fg) {
@@ -288,6 +303,7 @@ void ui_course_picker_create(Window *window, ActionBarLayer *action_bar, GColor 
         layer_add_child(wl, s_course_picker_layer);
     }
 
+#if !defined(PBL_PLATFORM_APLITE)
     // マーキー用クリッピングコンテナの作成（左側チェックボックス 34px の右隣に配置）
     int text_h = 14;
     int prev_y = text_h + 3;
@@ -306,6 +322,7 @@ void ui_course_picker_create(Window *window, ActionBarLayer *action_bar, GColor 
     layer_add_child(s_marquee_container_layer, text_layer_get_layer(s_marquee_text_layer));
 
     update_marquee_content();
+#endif
     layer_mark_dirty(s_course_picker_layer);
 }
 
@@ -313,6 +330,7 @@ void ui_course_picker_destroy(void) {
     s_is_course_picking = false;
     stop_marquee();
 
+#if !defined(PBL_PLATFORM_APLITE)
     if (s_marquee_text_layer) {
         text_layer_destroy(s_marquee_text_layer);
         s_marquee_text_layer = NULL;
@@ -321,6 +339,7 @@ void ui_course_picker_destroy(void) {
         layer_destroy(s_marquee_container_layer);
         s_marquee_container_layer = NULL;
     }
+#endif
     if (s_course_picker_layer) {
         layer_remove_from_parent(s_course_picker_layer);
         layer_destroy(s_course_picker_layer);
@@ -357,8 +376,10 @@ void ui_course_picker_handle_select(void) {
 void ui_course_picker_update_colors(GColor main_bg, GColor main_fg) {
     s_current_bg = main_bg;
     s_current_fg = main_fg;
+#if !defined(PBL_PLATFORM_APLITE)
     if (s_marquee_text_layer) {
         text_layer_set_text_color(s_marquee_text_layer, s_current_bg);
     }
+#endif
     if (s_course_picker_layer) layer_mark_dirty(s_course_picker_layer);
 }
