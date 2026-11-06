@@ -2,6 +2,7 @@
 #include "../ui/ui_course_picker.h"
 #include "../ui/ui_marquee.h"
 #include "../ui/ui_color_picker.h"
+#include "../ui/ui_mic_visualizer.h"
 #include "comm_service.h"
 
 // ============================================================================
@@ -508,8 +509,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             }
             if (c_idx == c_total - 1) {
                 s_map_transfer_in_progress = false;
+                should_update_ui = true;
             }
-            should_update_ui = true;
         }
 #endif
         else if (t->key == MESSAGE_KEY_KEY_COURSES_DATA) {
@@ -563,6 +564,10 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         } else if (received_cmd == 22) {
             trigger_sunshine_theme();
             if (!display_msg) display_msg = "HR TOO LOW!";
+        } else if (received_cmd == 30) {
+            ui_mic_visualizer_start(NULL);
+        } else if (received_cmd == 31) {
+            ui_mic_visualizer_stop();
         } else if (display_msg) {
             if (s_current_vibe_cmd != 21 && s_current_vibe_cmd != 22) {
                 cancel_vibe_chain();

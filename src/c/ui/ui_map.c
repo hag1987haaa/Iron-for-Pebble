@@ -9,13 +9,19 @@ static GColor s_current_bg, s_current_fg;
 // RLEマップデータバッファ
 #if defined(PBL_PLATFORM_APLITE)
 #define MAX_MAP_RLE_SIZE 32
+#elif defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_GABBRO)
+// 大画面（Emery 200x176 / Gabbro 260x198）の街中高密度マップでも100%溢れない16KBバッファ（最大32チャンク）
+#define MAX_MAP_RLE_SIZE 16384
 #else
 #define MAX_MAP_RLE_SIZE 8192
 #endif
 #define MAP_CHUNK_SIZE 500
+#define MAP_HEADER_MAGIC0 0xFE
+#define MAP_HEADER_MAGIC1 0xFD
 static uint8_t s_map_rle_data[MAX_MAP_RLE_SIZE];
 static int s_map_rle_len = 0;
 static bool s_has_received_data = false;
+static bool s_transfer_started_from_zero = false;
 static uint32_t s_received_chunks_mask = 0;
 static int s_expected_total_chunks = 0;
 
@@ -45,12 +51,35 @@ static void draw_rle_map(GContext *ctx, GRect map_rect) {
 
     // 受信済みRLEデータがある場合はプログレッシブに走査線を描画
     if (s_has_received_data && s_map_rle_len >= 2) {
+        int start_idx = 0;
+        int src_w = map_w;
+
+        // 4バイトヘッダ [0xFE, 0xFD, width_low, height_low] がある場合は、
+        // Android側がエンコードした正確な横幅(src_w)を取得して走査線ズレ（斜め砂嵐）を完全防止
+        if (s_map_rle_len >= 6 &&
+            s_map_rle_data[0] == MAP_HEADER_MAGIC0 &&
+            s_map_rle_data[1] == MAP_HEADER_MAGIC1) {
+            int encoded_w = s_map_rle_data[2];
+            if (encoded_w == 4) {
+                encoded_w = 260; // Gabbro (260 & 0xFF == 4)
+            }
+            if (encoded_w >= 100 && encoded_w <= 300) {
+                src_w = encoded_w;
+            }
+            start_idx = 4;
+        }
+
         int cur_x = 0;
         int cur_y = 0;
+        // 画面幅とエンコード幅が異なる場合でも中央寄せで崩れずに描画
+        int x_offset = (map_w > src_w) ? ((map_w - src_w) / 2) : 0;
+        // 必ず2バイト（[count, color]ペア）境界でループを終端
+        int safe_end = start_idx + (((s_map_rle_len - start_idx) / 2) * 2);
 
-        for (int i = 0; i < s_map_rle_len - 1; i += 2) {
+        for (int i = start_idx; i < safe_end; i += 2) {
             int count = s_map_rle_data[i];
             uint8_t color_val = s_map_rle_data[i + 1];
+            if (count <= 0) continue;
             
             GColor c;
 #if defined(PBL_COLOR)
@@ -63,18 +92,23 @@ static void draw_rle_map(GContext *ctx, GRect map_rect) {
             graphics_context_set_stroke_width(ctx, 1);
 
             while (count > 0 && cur_y < map_h) {
-                int line_remain = map_w - cur_x;
+                int line_remain = src_w - cur_x;
                 int draw_len = (count < line_remain) ? count : line_remain;
                 
-                graphics_draw_line(ctx, 
-                    GPoint(cur_x, cur_y), 
-                    GPoint(cur_x + draw_len - 1, cur_y)
-                );
+                int draw_x0 = x_offset + cur_x;
+                int draw_x1 = draw_x0 + draw_len - 1;
+                if (draw_x0 < map_w) {
+                    if (draw_x1 >= map_w) draw_x1 = map_w - 1;
+                    graphics_draw_line(ctx, 
+                        GPoint(draw_x0, cur_y), 
+                        GPoint(draw_x1, cur_y)
+                    );
+                }
                 
                 cur_x += draw_len;
                 count -= draw_len;
                 
-                if (cur_x >= map_w) {
+                if (cur_x >= src_w) {
                     cur_x = 0;
                     cur_y++;
                 }
@@ -282,6 +316,7 @@ void ui_map_create(Window *window, GColor main_bg, GColor main_fg) {
 void ui_map_destroy(void) {
     s_is_map_active = false;
     s_has_received_data = false;
+    s_transfer_started_from_zero = false;
     s_map_rle_len = 0;
     s_received_chunks_mask = 0;
     s_expected_total_chunks = 0;
@@ -296,30 +331,51 @@ bool ui_map_is_active(void) {
 }
 
 void ui_map_update_data(const uint8_t *data, int length, int chunk_idx, int total_chunks) {
-    if (chunk_idx == 0 || s_expected_total_chunks != total_chunks) {
+    if (!data || length <= 0 || total_chunks <= 0 || total_chunks > 32) {
+        return;
+    }
+
+    // 必ず chunk_idx == 0 で新しいマップフレームの受信をクリーンに開始する。
+    // これにより、前回と同じチャンク数のマップが送られてきた場合でも旧チャンクと新チャンクが絶対に混ざらない。
+    if (chunk_idx == 0) {
         s_map_rle_len = 0;
         s_has_received_data = false;
         s_received_chunks_mask = 0;
         s_expected_total_chunks = total_chunks;
+        s_transfer_started_from_zero = true;
+    } else if (!s_transfer_started_from_zero || s_expected_total_chunks != total_chunks) {
+        // チャンク0をまだ受け取っていない状態での途中チャンクや世代違いのチャンクは破棄
+        s_has_received_data = false;
+        s_received_chunks_mask = 0;
+        s_transfer_started_from_zero = false;
+        return;
     }
+
+    // RLEストリームおよびチャンク分割サイズは常に偶数バイト（2バイトペア単位）。
+    // 万が一通信異常で奇数バイトのチャンクが届いた場合は切り捨てて[count, color]の反転（カラー砂嵐）を防ぐ。
+    int aligned_length = (length / 2) * 2;
+    if (aligned_length <= 0) {
+        return;
+    }
+
     if (chunk_idx >= 0 && chunk_idx < total_chunks && chunk_idx < 32) {
         int offset = chunk_idx * MAP_CHUNK_SIZE;
-        if (offset + length <= MAX_MAP_RLE_SIZE) {
-            memcpy(s_map_rle_data + offset, data, length);
+        if (offset + aligned_length <= MAX_MAP_RLE_SIZE) {
+            memcpy(s_map_rle_data + offset, data, aligned_length);
             s_received_chunks_mask |= (1UL << chunk_idx);
-            if (offset + length > s_map_rle_len) {
-                s_map_rle_len = offset + length;
+            if (offset + aligned_length > s_map_rle_len) {
+                s_map_rle_len = offset + aligned_length;
             }
         }
     }
-    // 全チャンクが1つも欠けずに揃った場合のみ描画フラグを立てて更新（欠落時の砂嵐を完全防止）
-    if (total_chunks > 0 && total_chunks <= 32) {
-        uint32_t full_mask = (total_chunks == 32) ? 0xFFFFFFFFUL : ((1UL << total_chunks) - 1UL);
-        if (s_received_chunks_mask == full_mask) {
-            s_has_received_data = true;
-            if (s_map_layer) {
-                layer_mark_dirty(s_map_layer);
-            }
+
+    // 全チャンク(0 .. total_chunks-1)が1つも欠けずに揃った場合のみ描画フラグを立てて更新
+    uint32_t full_mask = (total_chunks == 32) ? 0xFFFFFFFFUL : ((1UL << total_chunks) - 1UL);
+    if (s_transfer_started_from_zero && s_received_chunks_mask == full_mask) {
+        s_has_received_data = true;
+        s_transfer_started_from_zero = false; // 次の転送は必ず再度 chunk_idx == 0 から始まることを強制
+        if (s_map_layer) {
+            layer_mark_dirty(s_map_layer);
         }
     }
 }

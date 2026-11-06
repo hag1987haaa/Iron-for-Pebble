@@ -6,6 +6,10 @@
     "license": "MIT",
     "name": "iron",
     "pebble": {
+        "manifestVersion": 2,
+        "usesPermissions": [
+            "WatchMicrophone"
+        ],
         "capabilities": [],
         "companionApp": {
             "android": {
@@ -194,5 +198,5 @@
             "watchface": false
         }
     },
-    "version": "1.4.5"
+    "version": "1.4.6"
 }

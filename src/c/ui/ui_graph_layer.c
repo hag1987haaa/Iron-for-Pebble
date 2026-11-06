@@ -258,8 +258,8 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
             snprintf(min_str, 16, "%dm", p_min);
             draw_side_labels(ctx, active_w, lbl_margin_r, base_y, max_str, min_str, 42);
         }
-    } else if (graph_id == 4) { // CADENCE (折れ線・数値ラベル)
-        if (p_min == 999999) { p_min = 60; p_max = 180; }
+    } else if (graph_id == 4 || graph_id == 6) { // HR (4) / CADENCE (6) (折れ線・数値ラベル)
+        if (p_min == 999999) { p_min = (graph_id == 6) ? 0 : 60; p_max = (graph_id == 6) ? 100 : 180; }
         if (p_max == p_min) p_max = p_min + 1;
         int margin = (p_max - p_min) / 4;
         if (margin < 5) margin = 5;
@@ -277,6 +277,32 @@ void ui_graph_layer_update_proc(Layer *layer, GContext *ctx, uint8_t app_state, 
         draw_bar_plot(ctx, pl, bw, base_y, mah, graph_count, 0, p_max, false);
         if (show_labels) {
             draw_side_labels(ctx, active_w, lbl_margin_r, base_y, graph_data_get_max_label(), NULL, 48);
+        }
+    } else if (graph_id == 7) { // POWER (折れ線・Wラベル)
+        if (p_min == 999999) { p_min = 0; p_max = 200; }
+        if (p_max == p_min) p_max = p_min + 10;
+        int margin = (p_max - p_min) / 4;
+        if (margin < 10) margin = 10;
+        plot_min = (p_min > margin) ? p_min - margin : 0;
+        plot_max = p_max + margin;
+        draw_line_plot(ctx, pl, bw, base_y, mah, graph_count, plot_min, plot_max, false, true);
+        if (show_labels) {
+            char max_str[16], min_str[16];
+            snprintf(max_str, 16, "%dW", p_max);
+            snprintf(min_str, 16, "%dW", p_min);
+            draw_side_labels(ctx, active_w, lbl_margin_r, base_y, max_str, min_str, 36);
+        }
+    } else { // 汎用折れ線フォールバック
+        if (p_min == 999999) { p_min = 0; p_max = 100; }
+        if (p_max == p_min) p_max = p_min + 1;
+        plot_min = (p_min > 5) ? p_min - 5 : 0;
+        plot_max = p_max + 5;
+        draw_line_plot(ctx, pl, bw, base_y, mah, graph_count, plot_min, plot_max, false, true);
+        if (show_labels) {
+            char max_str[16], min_str[16];
+            snprintf(max_str, 16, "%d", p_max);
+            snprintf(min_str, 16, "%d", p_min);
+            draw_side_labels(ctx, active_w, lbl_margin_r, base_y, max_str, min_str, 28);
         }
     }
 }

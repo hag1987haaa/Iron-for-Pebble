@@ -9,6 +9,7 @@
 #include "ui/ui_marquee.h"
 #include "ui/ui_course_picker.h"
 #include "ui/ui_graph_layer.h"
+#include "ui/ui_mic_visualizer.h"
 
 /* ==========================================================
    グローバル変数
@@ -467,6 +468,10 @@ static void down_long_click_release_handler(ClickRecognizerRef recognizer, void 
 }
 
 static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
+    if (ui_mic_visualizer_is_active()) {
+        ui_mic_visualizer_stop();
+        return;
+    }
     if (s_is_discard_confirm) {
         s_is_discard_confirm = false;
         update_ui_state();
@@ -1176,6 +1181,7 @@ static void main_window_load(Window *window) {
 }
 
 static void main_window_unload(Window *window) {
+    ui_mic_visualizer_stop();
     graph_data_save_to_persist();
     ui_marquee_deinit();
     
