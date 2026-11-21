@@ -1,5 +1,6 @@
 #include "../ui/ui_map.h"
 #include "../ui/ui_course_picker.h"
+#include "../ui/ui_activity_picker.h"
 #include "../ui/ui_marquee.h"
 #include "../ui/ui_color_picker.h"
 #include "../ui/ui_mic_visualizer.h"
@@ -489,7 +490,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         }
         else if (t->key == MESSAGE_KEY_ACTIVITY_TYPE && s_current_activity_ptr) {
             int received_type = app_get_int_from_tuple(t);
-            if(received_type >= 0 && received_type < ACTIVITY_COUNT) {
+            if (ui_activity_picker_is_valid_id((uint8_t)received_type)) {
                 if (*s_current_activity_ptr != (ActivityType)received_type) {
                     *s_current_activity_ptr = (ActivityType)received_type;
                     persist_write_int(PK_ACTIVITY_TYPE, *s_current_activity_ptr);
@@ -517,6 +518,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             const char *raw_courses = (t->type == TUPLE_CSTRING) ? t->value->cstring : NULL;
             if (raw_courses) {
                 ui_course_picker_parse_and_set(raw_courses);
+                should_update_ui = true;
+            }
+        }
+        else if (t->key == MESSAGE_KEY_KEY_ACTIVITIES_DATA) {
+            const char *raw_activities = (t->type == TUPLE_CSTRING) ? t->value->cstring : NULL;
+            if (raw_activities) {
+                ui_activity_picker_parse_and_set(raw_activities);
                 should_update_ui = true;
             }
         }

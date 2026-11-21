@@ -563,16 +563,9 @@ static void time_layer_update_callback(Layer *layer, GContext *ctx) {
 #endif
 
     if (s_is_long_workout) {
-        GFont h_font = s_font_long_time;
-#if !defined(PBL_PLATFORM_APLITE)
 #if defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
+        GFont h_font = s_font_long_time;
         GFont ms_font = s_font_huge_time;
-#else
-        GFont ms_font = s_font_long_time;
-#endif
-#else
-        GFont ms_font = s_font_long_time;
-#endif
 
         char h_str[16];
         snprintf(h_str, sizeof(h_str), "%s:", s_time_hour_buf);
@@ -587,6 +580,13 @@ static void time_layer_update_callback(Layer *layer, GContext *ctx) {
         GRect ms_rect = GRect(ms_x, s_rect_min_5.origin.y, ms_w, s_rect_min_5.size.h);
         graphics_draw_text(ctx, ms_str, ms_font, ms_rect,
                            GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+#else
+        char hms_str[32];
+        snprintf(hms_str, sizeof(hms_str), "%s:%s:%s", s_time_hour_buf, s_time_min_buf, s_time_sec_buf);
+        GRect hms_rect = GRect(0, s_rect_hour_5.origin.y, active_w, s_rect_hour_5.size.h);
+        graphics_draw_text(ctx, hms_str, s_font_long_time, hms_rect,
+                           GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+#endif
     } else {
         char mm_ss_str[16];
         snprintf(mm_ss_str, sizeof(mm_ss_str), "%s:%s", s_time_min_buf, s_time_sec_buf);
@@ -947,7 +947,7 @@ static void main_window_load(Window *window) {
 
 #if defined(PBL_PLATFORM_APLITE)
     s_font_huge_time = fonts_get_system_font(FONT_KEY_LECO_32_BOLD_NUMBERS);
-    s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_32_BOLD_NUMBERS);
+    s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM);
     s_font_mid_data = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
     
     use_overlap = false;
@@ -967,7 +967,7 @@ static void main_window_load(Window *window) {
 
 #elif defined(PBL_PLATFORM_BASALT) || defined(PBL_PLATFORM_DIORITE) || defined(PBL_PLATFORM_FLINT)
     s_font_huge_time = fonts_get_system_font(FONT_KEY_LECO_38_BOLD_NUMBERS);
-    s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_32_BOLD_NUMBERS);
+    s_font_long_time = fonts_get_system_font(FONT_KEY_LECO_26_BOLD_NUMBERS_AM_PM);
     s_font_mid_data = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
     
     use_overlap = false;
@@ -1214,6 +1214,7 @@ static void main_window_unload(Window *window) {
 static void init(void) {
     graph_data_init();
     ui_course_picker_init();
+    ui_activity_picker_init();
     comm_service_init(update_ui_state, on_graph_dirty_request);
     comm_service_request_sync();
     tick_timer_service_subscribe(SECOND_UNIT, tick_handler);

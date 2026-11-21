@@ -33,6 +33,7 @@
 #define MESSAGE_KEY_KEY_COURSES_DATA 10025
 #define MESSAGE_KEY_KEY_ALERT_MSG 10026
 #define MESSAGE_KEY_KEY_COMPANION_TYPE 10027
+#define MESSAGE_KEY_KEY_ACTIVITIES_DATA 10028
 
 typedef enum {
     COMPANION_TYPE_UNKNOWN = 0,
@@ -67,13 +68,24 @@ typedef enum {
 #define PK_LAST_LOWER_ID 61
 #define PK_COURSES_COUNT 62
 #define PK_COURSES_DATA 63
+#define PK_ACTIVITIES_COUNT 64
+#define PK_ACTIVITIES_DATA 65
+#define PK_ACTIVITIES_VERSION 66
 
 #if defined(PBL_PLATFORM_APLITE)
 #define MAX_COURSES 1
+#define MAX_ACTIVITIES 10
 #else
 #define MAX_COURSES 20
+#define MAX_ACTIVITIES 20
 #endif
 #define COURSE_NAME_LEN 13
+#define ACTIVITY_NAME_LEN 16
+
+typedef struct __attribute__((__packed__)) {
+    uint8_t id;
+    char name[ACTIVITY_NAME_LEN];
+} ActivityItem;
 
 typedef struct __attribute__((__packed__)) {
     uint8_t id;
@@ -164,4 +176,4 @@ static inline bool app_is_numeric_string(const char *str) {
     return true;
 }
 
-#define APP_VERSION_STR "v1.4.5"
+#define APP_VERSION_STR "v1.4.7"
