@@ -48,7 +48,6 @@ static GRect s_rect_hour_5, s_rect_min_5, s_rect_min_3;
 static AppTimer *s_ignore_single_click_timer = NULL;
 static bool s_ignore_single_click = false;
 static uint64_t s_long_click_start_time = 0;
-static bool s_map_is_heading_up = false;
 static bool s_is_discard_confirm = false;
 
 /* ==========================================================
@@ -290,10 +289,8 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (ui_map_is_active()) {
-        // マップ表示中のSELECT短押し: マップ中心位置化・拡大率初期化・ノースアップ/ノーズアップ切替
-        s_map_is_heading_up = !s_map_is_heading_up;
+        // マップ表示中のSELECT短押し: マップ中心位置化・全体フィット等（Android側で処理）
         comm_service_send_button_event(EVENT_BUTTON_SELECT_CLICK);
-        ui_marquee_trigger_custom(s_map_is_heading_up ? "NOSE UP" : "NORTH UP", s_current_main_fg, s_current_main_bg, s_app_state);
         vibes_short_pulse();
         return;
     }
