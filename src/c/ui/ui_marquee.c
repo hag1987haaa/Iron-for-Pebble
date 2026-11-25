@@ -200,6 +200,16 @@ static void custom_msg_timer_callback(void *context) {
     }
 }
 
+static GFont get_default_marquee_font(void) {
+#if defined(PBL_PLATFORM_GABBRO) || defined(PBL_PLATFORM_EMERY)
+    return fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+#elif defined(PBL_PLATFORM_APLITE)
+    return fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+#else
+    return fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+#endif
+}
+
 void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color, uint8_t app_state) {
     if (!msg) return;
     s_current_fg = fg_color;
@@ -212,24 +222,64 @@ void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color
     if (!s_msg_layer || !s_msg_container_layer || !s_window) return;
     
 #if defined(PBL_PLATFORM_APLITE)
-    static char custom_msg_buf[16];
+    static char custom_msg_buf[24];
 #else
     static char custom_msg_buf[64];
 #endif
     snprintf(custom_msg_buf, sizeof(custom_msg_buf), "%s", msg);
-    
+
+    Layer *wl = window_get_root_layer(s_window);
+#if defined(PBL_PLATFORM_CHALK)
+    int w = layer_get_bounds(wl).size.w - 36;
+    int x = 18;
+#elif defined(PBL_PLATFORM_GABBRO)
+    int w = layer_get_bounds(wl).size.w - 40;
+    int x = 20;
+#else
+    int w = layer_get_bounds(wl).size.w - ACTION_BAR_WIDTH;
+    int x = 0;
+#endif
+
+    // 1行で横幅 w に収まる最大フォントを自動選択（ロングプレス等の見切れ・はみ出し防止）
+    static const char * const s_font_keys[] = {
+#if defined(PBL_PLATFORM_GABBRO) || defined(PBL_PLATFORM_EMERY)
+        FONT_KEY_GOTHIC_28_BOLD,
+        FONT_KEY_GOTHIC_24_BOLD,
+        FONT_KEY_GOTHIC_18_BOLD,
+        FONT_KEY_GOTHIC_14_BOLD
+#elif defined(PBL_PLATFORM_APLITE)
+        FONT_KEY_GOTHIC_18_BOLD,
+        FONT_KEY_GOTHIC_14_BOLD
+#else
+        FONT_KEY_GOTHIC_24_BOLD,
+        FONT_KEY_GOTHIC_18_BOLD,
+        FONT_KEY_GOTHIC_14_BOLD
+#endif
+    };
+    GFont chosen_font = fonts_get_system_font(s_font_keys[ARRAY_LENGTH(s_font_keys) - 1]);
+    int chosen_h = 18;
+    for (uint32_t i = 0; i < ARRAY_LENGTH(s_font_keys); i++) {
+        GFont f = fonts_get_system_font(s_font_keys[i]);
+        GSize sz = graphics_text_layout_get_content_size(custom_msg_buf, f, GRect(0, 0, 400, 50),
+                                                         GTextOverflowModeWordWrap, GTextAlignmentLeft);
+        if (sz.w <= w - 4) {
+            chosen_font = f;
+            chosen_h = sz.h;
+            break;
+        }
+    }
+
+    int container_h = layer_get_bounds(s_msg_container_layer).size.h;
+    int y_off = (container_h - chosen_h) / 2 - 2;
+    if (y_off < -2) y_off = -2;
+
+    text_layer_set_font(s_msg_layer, chosen_font);
     text_layer_set_text(s_msg_layer, custom_msg_buf);
     text_layer_set_text_color(s_msg_layer, s_current_fg);
     text_layer_set_text_alignment(s_msg_layer, GTextAlignmentCenter);
+    text_layer_set_overflow_mode(s_msg_layer, GTextOverflowModeTrailingEllipsis);
     
-    Layer *wl = window_get_root_layer(s_window);
-#if defined(PBL_ROUND)
-    int w = layer_get_bounds(wl).size.w;
-#else
-    int w = layer_get_bounds(wl).size.w - ACTION_BAR_WIDTH;
-#endif
-    
-    layer_set_frame(text_layer_get_layer(s_msg_layer), GRect(0, -2, w, layer_get_bounds(s_msg_container_layer).size.h));
+    layer_set_frame(text_layer_get_layer(s_msg_layer), GRect(x, y_off, w, container_h));
     s_marquee_timer = app_timer_register(5000, custom_msg_timer_callback, NULL);
 }
 
@@ -275,6 +325,7 @@ void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {
     show_marquee_layers();
     if (!s_msg_layer || !s_msg_container_layer || !s_window) return;
     
+    text_layer_set_font(s_msg_layer, get_default_marquee_font());
     text_layer_set_text(s_msg_layer, msg);
     text_layer_set_text_color(s_msg_layer, s_current_fg);
     text_layer_set_text_alignment(s_msg_layer, GTextAlignmentLeft);

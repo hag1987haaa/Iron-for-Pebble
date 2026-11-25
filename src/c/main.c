@@ -567,10 +567,14 @@ static void time_layer_update_callback(Layer *layer, GContext *ctx) {
     if (s_app_state < 3 && s_show_activity_name_in_header) {
         const char *act_name = ui_activity_picker_get_name_by_id((uint8_t)s_current_activity);
         int box_h = 38;
-#if defined(PBL_ROUND)
+#if defined(PBL_PLATFORM_CHALK)
+        int box_y = b.size.h - box_h - 4;
+        int box_x = 30;
+        int box_w = active_w - 60;
+#elif defined(PBL_PLATFORM_GABBRO)
         int box_y = b.size.h - box_h - 6;
-        int box_x = 12;
-        int box_w = active_w - 24;
+        int box_x = 28;
+        int box_w = active_w - 56;
 #else
         int box_y = (b.size.h - box_h) / 2;
         int box_x = 2;
@@ -580,9 +584,29 @@ static void time_layer_update_callback(Layer *layer, GContext *ctx) {
         graphics_context_set_fill_color(ctx, s_current_main_fg);
         graphics_fill_rect(ctx, GRect(box_x, box_y, box_w, box_h), 5, GCornersAll);
 
+        // ピッカーと同じ GOTHIC_28_BOLD を基本とし、狭い機種で幅を超える長い名前だけ自動縮小
+        GFont act_font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+        int text_y = box_y + 2;
+        int text_h = 34;
+        int max_text_w = box_w - 6;
+        GSize sz = graphics_text_layout_get_content_size(act_name, act_font, GRect(0, 0, 300, 40),
+                                                         GTextOverflowModeWordWrap, GTextAlignmentLeft);
+        if (sz.w > max_text_w) {
+            act_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+            text_y = box_y + 4;
+            text_h = 28;
+            sz = graphics_text_layout_get_content_size(act_name, act_font, GRect(0, 0, 300, 40),
+                                                       GTextOverflowModeWordWrap, GTextAlignmentLeft);
+            if (sz.w > max_text_w) {
+                act_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+                text_y = box_y + 7;
+                text_h = 22;
+            }
+        }
+
         graphics_context_set_text_color(ctx, s_current_main_bg);
-        graphics_draw_text(ctx, act_name, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD),
-                           GRect(0, box_y + 2, active_w, 34),
+        graphics_draw_text(ctx, act_name, act_font,
+                           GRect(box_x + 2, text_y, box_w - 4, text_h),
                            GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
         return;
     }
