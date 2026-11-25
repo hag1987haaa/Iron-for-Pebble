@@ -33,7 +33,19 @@ void ui_activity_picker_init(void) {
             set_default_activities();
             ui_activity_picker_save();
         } else {
-            persist_read_data(PK_ACTIVITIES_DATA, s_activities, sizeof(s_activities));
+            int first_count = (s_activity_count > ACTIVITIES_PERSIST_CHUNK) ? ACTIVITIES_PERSIST_CHUNK : s_activity_count;
+            persist_read_data(PK_ACTIVITIES_DATA, &s_activities[0], sizeof(ActivityItem) * first_count);
+
+            if (s_activity_count > ACTIVITIES_PERSIST_CHUNK) {
+                if (persist_exists(PK_ACTIVITIES_DATA_2)) {
+                    int second_count = s_activity_count - ACTIVITIES_PERSIST_CHUNK;
+                    persist_read_data(PK_ACTIVITIES_DATA_2, &s_activities[ACTIVITIES_PERSIST_CHUNK], sizeof(ActivityItem) * second_count);
+                } else {
+                    set_default_activities();
+                    ui_activity_picker_save();
+                    return;
+                }
+            }
             s_activities_version = persist_exists(PK_ACTIVITIES_VERSION) ? persist_read_int(PK_ACTIVITIES_VERSION) : 0;
         }
     } else {
@@ -44,7 +56,16 @@ void ui_activity_picker_init(void) {
 
 void ui_activity_picker_save(void) {
     persist_write_int(PK_ACTIVITIES_COUNT, s_activity_count);
-    persist_write_data(PK_ACTIVITIES_DATA, s_activities, sizeof(s_activities));
+    int first_count = (s_activity_count > ACTIVITIES_PERSIST_CHUNK) ? ACTIVITIES_PERSIST_CHUNK : s_activity_count;
+    if (first_count > 0) {
+        persist_write_data(PK_ACTIVITIES_DATA, &s_activities[0], sizeof(ActivityItem) * first_count);
+    }
+    if (s_activity_count > ACTIVITIES_PERSIST_CHUNK) {
+        int second_count = s_activity_count - ACTIVITIES_PERSIST_CHUNK;
+        persist_write_data(PK_ACTIVITIES_DATA_2, &s_activities[ACTIVITIES_PERSIST_CHUNK], sizeof(ActivityItem) * second_count);
+    } else if (persist_exists(PK_ACTIVITIES_DATA_2)) {
+        persist_delete(PK_ACTIVITIES_DATA_2);
+    }
     persist_write_int(PK_ACTIVITIES_VERSION, s_activities_version);
 }
 

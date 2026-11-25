@@ -628,7 +628,7 @@ void comm_service_init(CommServiceUIUpdateCallback ui_update_cb, CommServiceGrap
     app_message_register_outbox_sent(outbox_sent_callback);
     app_message_register_outbox_failed(outbox_failed_callback);
 #if defined(PBL_PLATFORM_APLITE)
-    app_message_open(256, 128);
+    app_message_open(512, 128);
 #else
     app_message_open(1024, 256);
 #endif
