@@ -234,11 +234,25 @@ void ui_marquee_trigger_custom(const char *msg, GColor fg_color, GColor bg_color
 }
 
 void ui_marquee_trigger(uint8_t app_state, GColor fg_color, GColor bg_color) {
+    if (s_is_custom_marquee) {
+        s_current_fg = fg_color;
+        s_current_bg = bg_color;
+        s_current_app_state = app_state;
+        return;
+    }
+
+    // すでに同じ app_state のマーキーが再生中（または次周回待ち）なら中断せず流し切る
+    if (s_current_app_state == app_state && (s_marquee_anim != NULL || s_marquee_timer != NULL)) {
+        s_current_fg = fg_color;
+        s_current_bg = bg_color;
+        if (s_msg_layer) text_layer_set_text_color(s_msg_layer, s_current_fg);
+        if (s_msg_container_layer) layer_mark_dirty(s_msg_container_layer);
+        return;
+    }
+
     s_current_fg = fg_color;
     s_current_bg = bg_color;
     s_current_app_state = app_state;
-
-    if (s_is_custom_marquee) return;
 
     if (s_current_app_state == 3 || s_current_app_state == 4) {
         ui_marquee_destroy();
