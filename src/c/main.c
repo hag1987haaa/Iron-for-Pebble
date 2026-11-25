@@ -30,7 +30,9 @@ static GColor s_current_main_bg, s_current_main_fg;
 static char s_time_hour_buf[8] = "0", s_time_min_buf[8] = "00", s_time_sec_buf[8] = "00";
 static char s_clock_buf[16] = "--:--", s_dist_buf[16] = "--", s_hr_buf[16] = "--", s_step_buf[16] = "--";
 
-static uint8_t s_app_state = 0; 
+static uint8_t s_app_state = 0;
+static bool s_show_activity_name_in_header = true;
+static uint8_t s_header_toggle_sec = 0; 
 static bool s_is_paused = true;
 static bool s_is_small_screen = false;
 static bool s_is_round_screen = false;
@@ -307,6 +309,8 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
         s_current_activity = ui_activity_picker_get_preview_activity();
         persist_write_int(PK_ACTIVITY_TYPE, s_current_activity);
         comm_service_send_activity_type(s_current_activity);
+        s_show_activity_name_in_header = true;
+        s_header_toggle_sec = 0;
         ui_activity_picker_destroy();
         refresh_action_bar_and_ui();
         return;
@@ -559,6 +563,30 @@ static void time_layer_update_callback(Layer *layer, GContext *ctx) {
     int active_w = b.size.w - ACTION_BAR_WIDTH;
 #endif
 
+    // 計測開始前 (IDLE / PREPARING / READY) は 2秒周期でワークアウト種別名と 00:00 を交互表示
+    if (s_app_state < 3 && s_show_activity_name_in_header) {
+        const char *act_name = ui_activity_picker_get_name_by_id((uint8_t)s_current_activity);
+        int box_h = 38;
+#if defined(PBL_ROUND)
+        int box_y = b.size.h - box_h - 6;
+        int box_x = 12;
+        int box_w = active_w - 24;
+#else
+        int box_y = (b.size.h - box_h) / 2;
+        int box_x = 2;
+        int box_w = active_w - 4;
+#endif
+        if (box_y < 2) box_y = 2;
+        graphics_context_set_fill_color(ctx, s_current_main_fg);
+        graphics_fill_rect(ctx, GRect(box_x, box_y, box_w, box_h), 5, GCornersAll);
+
+        graphics_context_set_text_color(ctx, s_current_main_bg);
+        graphics_draw_text(ctx, act_name, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD),
+                           GRect(0, box_y + 2, active_w, 34),
+                           GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+        return;
+    }
+
     if (s_is_long_workout) {
 #if defined(PBL_PLATFORM_CHALK) || defined(PBL_PLATFORM_GABBRO)
         GFont h_font = s_font_long_time;
@@ -773,6 +801,17 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         }
         if (ui_map_is_active()) {
             ui_map_mark_dirty();
+        }
+    }
+
+    if (s_app_state < 3 && tick_time != NULL) {
+        s_header_toggle_sec++;
+        if (s_header_toggle_sec >= 2) {
+            s_header_toggle_sec = 0;
+            s_show_activity_name_in_header = !s_show_activity_name_in_header;
+            if (s_time_layer && !ui_map_is_active()) {
+                layer_mark_dirty(s_time_layer);
+            }
         }
     }
 
